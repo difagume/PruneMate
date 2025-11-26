@@ -1,12 +1,12 @@
 # PruneMate
 
 <p align="center">
-  <img width="400" height="400" alt="prunemate-logo" src="<img width="1024" height="1024" alt="prunemate" src="https://github.com/user-attachments/assets/c1a923ff-f120-4254-ac7e-13961559259e" />
+  <img width="400" height="400" alt="prunemate-logo" src="https://github.com/user-attachments/assets/0785ea56-88f6-4926-9ae1-de736840c378" />
 " />
 </p>
 
 <h1 align="center">PruneMate</h1>
-<p align="center"><em>Docker Cleanup Helper - Automated & Scheduled</em></p>
+<p align="center"><em>Docker image & resource cleanup helper, on a schedule!</em></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.2.2-blue?style=flat-square"/>
@@ -15,24 +15,17 @@
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square"/>
 </p>
 
-A sleek web interface to **automatically clean up Docker resources** on a schedule. Built with Python (Flask) · Docker SDK · APScheduler · Gunicorn
+A sleek, lightweight web interface to **automatically clean up Docker resources** on a schedule. Built with Python (Flask) · Docker SDK · APScheduler · Gunicorn
 
 **Keep your Docker host tidy with scheduled cleanup of unused images, containers, networks, and volumes.**
 
----
-
-## 🔗 Quick links
-
-- 📦 **Docker Hub:** (coming soon)
-- 🐙 **GitHub:** <https://github.com/anoniemerd/PruneMate>
-- 📸 **Screenshots:** See below
 
 ---
 
 ## ✨ Features
 
 - 🕐 **Flexible scheduling** - Daily, Weekly, or Monthly cleanup runs
-- 🌍 **Timezone aware** - Configure your local timezone for accurate scheduling
+- 🌍 **Timezone aware** - Configure your local timezone
 - 🕒 **12/24-hour time format** - Choose your preferred time display
 - 🧹 **Selective cleanup** - Choose what to prune: containers, images, networks, volumes
 - 🔔 **Smart notifications** - Gotify or ntfy.sh support with optional change-only alerts
@@ -44,13 +37,46 @@ A sleek web interface to **automatically clean up Docker resources** on a schedu
 
 ## 📷 Screenshots
 
+### Main Dashboard
+The overall look of the PruneMate dashboard
 <p align="center">
-  <img alt="prunemate-schedule" src="docs/screenshot-schedule.png" />
+  <img width="800" alt="prunemate-schedule" src="https://github.com/user-attachments/assets/797c6c13-3078-4afb-a0db-2e05e16fba33" /> 
 </p>
 
+### Main Dashboard - Schedule Configuration
+Configure when and how often PruneMate should clean up your Docker resources.
+
 <p align="center">
-  <img alt="prunemate-notifications" src="docs/screenshot-notifications.png" />
+  <img width="800" alt="prunemate-schedule" src="https://github.com/user-attachments/assets/3a822897-5ede-4476-b570-f4d8adf37867" /> 
 </p>
+
+### Cleanup Options & Settings
+Select which Docker resources to clean up and configure advanced options.
+
+<p align="center">
+  <img width="800" alt="prunemate-cleanup" src="https://github.com/user-attachments/assets/70ae1e8f-49a1-4c89-ac46-685d804ee3db" />
+</p>
+
+### Notification Settings
+Set up notifications via Gotify or ntfy.sh to stay informed about cleanup results.
+
+<p align="center">
+  <img width="800" alt="prunemate-notifications" src="https://github.com/user-attachments/assets/4dab89c5-a6fe-482c-9b0b-09464b73933c" /> 
+</p>
+
+### Cleanup Results
+Get detailed statistics notifications about what was cleaned and how much space was reclaimed.
+
+Gotify :
+<p align="center">
+  <img width="800" alt="prunemate-results" src="https://github.com/user-attachments/assets/26c1eccb-96c1-4385-8a1a-ef8c4587909e" /> 
+</p>
+
+ntfy :
+<p align="center">
+  <img width="800" alt="prunemate-results" src="https://github.com/user-attachments/assets/232acb54-b06f-46b7-b829-df7a10dd4a6a" />
+</p>
+
 
 ---
 
@@ -59,7 +85,7 @@ A sleek web interface to **automatically clean up Docker resources** on a schedu
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- Access to Docker socket
+- Access to Docker socket (`/var/run/docker.sock`)
 
 ### Installation
 
@@ -72,12 +98,12 @@ cd PruneMate
 
 2. **Configure your settings** (optional):
 
-Edit `docker-compose.yaml` to set your timezone and preferences:
+Edit `docker-compose.yaml` to customize your timezone and time format:
 
 ```yaml
 environment:
-  - PRUNEMATE_TZ=Europe/Amsterdam     # Your timezone
-  - PRUNEMATE_TIME_24H=true           # true for 24h, false for 12h (AM/PM)
+  - PRUNEMATE_TZ=Europe/Amsterdam     # Your local timezone
+  - PRUNEMATE_TIME_24H=true           # true = 24h format, false = 12h (AM/PM)
 ```
 
 3. **Start PruneMate:**
@@ -86,8 +112,13 @@ environment:
 docker-compose up -d
 ```
 
-4. **Access the dashboard:**
+4. **Access the web interface:**
 
+Open your browser and navigate to:
+```
+http://localhost:7676/
+```
+or
 ```
 http://<your-server-ip>:7676/
 ```
@@ -96,7 +127,11 @@ http://<your-server-ip>:7676/
 
 ## 🐳 Docker Compose Configuration
 
+Complete example of `docker-compose.yaml`:
+
 ```yaml
+version: '3.8'
+
 services:
   prunemate:
     build: .
@@ -104,14 +139,19 @@ services:
     ports:
       - "7676:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # Required for Docker access
-      - ./logs:/var/log                             # Persistent logs
-      - ./config:/config                            # Persistent configuration
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker access (read-only)
+      - ./logs:/var/log                                # Persistent logs
+      - ./config:/config                               # Persistent configuration
     environment:
-      - PRUNEMATE_TZ=Europe/Amsterdam               # Your timezone
-      - PRUNEMATE_TIME_24H=true                     # Time format preference
+      - PRUNEMATE_TZ=Europe/Amsterdam                  # Your timezone (default: UTC)
+      - PRUNEMATE_TIME_24H=true                        # Time format (default: true)
     restart: unless-stopped
 ```
+
+**Volume explanations:**
+- `/var/run/docker.sock` - Required for Docker API access
+- `./logs` - Stores application logs (rotating, 5MB max per file)
+- `./config` - Stores configuration and state files
 
 ---
 
@@ -128,23 +168,24 @@ services:
 
 ### Web Interface Settings
 
-Access the web interface at `http://<your-server-ip>:7676/` to configure:
+Access the web interface at `http://localhost:7676/` (or your server IP) to configure:
 
-**Schedule:**
-- Frequency: Daily, Weekly, or Monthly
-- Time: When to run the cleanup
-- Day: Day of week (weekly) or day of month (monthly)
+**Schedule Settings:**
+- **Frequency:** Daily, Weekly, or Monthly
+- **Time:** When to run the cleanup (supports both 12h and 24h format)
+- **Day:** Day of week (for weekly) or day of month (for monthly)
 
 **Cleanup Options:**
-- All unused containers
-- All unused images
-- All unused networks
-- All unused volumes
+- ☑️ All unused containers
+- ☑️ All unused images  
+- ☑️ All unused networks
+- ☑️ All unused volumes
 
-**Notifications:**
-- Provider: Gotify or ntfy.sh
-- Configuration: URL, token/topic
-- Only notify on changes (optional)
+**Notification Settings:**
+- **Provider:** Gotify or ntfy.sh
+- **URL:** Your notification server URL
+- **Token/Topic:** Authentication token (Gotify) or topic name (ntfy)
+- **Only notify on changes:** Only send notifications when something was actually cleaned
 
 ---
 
@@ -210,25 +251,45 @@ docker-compose down
 
 ### Gotify
 
-1. Install Gotify server
-2. Create an application token
-3. Configure in PruneMate:
-   - Provider: Gotify
-   - URL: `https://your-gotify-server.com`
-   - Token: Your application token
+[Gotify](https://gotify.net/) is a self-hosted notification service.
+
+**Setup steps:**
+1. Install and run Gotify server
+2. Create a new application in Gotify
+3. Copy the application token
+4. Configure in PruneMate:
+   - **Provider:** Gotify
+   - **URL:** `https://your-gotify-server.com`
+   - **Token:** Your application token
 
 ### ntfy.sh
 
-1. Choose a unique topic name
-2. Configure in PruneMate:
-   - Provider: ntfy
-   - URL: `https://ntfy.sh` (or self-hosted)
-   - Topic: Your chosen topic name
+[ntfy.sh](https://ntfy.sh/) is a simple pub-sub notification service (self-hosted or public).
 
-Subscribe to your topic:
-```bash
-# Web: https://ntfy.sh/your-topic
-# Mobile: Install ntfy app and subscribe to your-topic
+**Setup steps:**
+1. Choose a unique topic name (e.g., `prunemate-alerts-YOUR-RANDOM-STRING`)
+2. Configure in PruneMate:
+   - **Provider:** ntfy
+   - **URL:** `https://ntfy.sh` (or your self-hosted instance)
+   - **Topic:** Your chosen topic name
+
+**Subscribe to notifications:**
+- **Web:** Visit `https://ntfy.sh/your-topic`
+- **Mobile:** Install the ntfy app ([Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy) / [iOS](https://apps.apple.com/app/ntfy/id1625396347)) and subscribe to your topic
+- **Desktop:** Use ntfy desktop app or web browser
+
+**Example notification:**
+```
+🧹 PruneMate Cleanup Report
+Daily cleanup completed
+
+Cleaned:
+• 3 containers
+• 5 images (2.3 GB)
+• 2 networks
+• 1 volume (450 MB)
+
+Total space reclaimed: 2.75 GB
 ```
 
 ---
@@ -237,157 +298,175 @@ Subscribe to your topic:
 
 ### Custom Port
 
-Change the port in `docker-compose.yaml`:
+Change the exposed port in `docker-compose.yaml`:
 
 ```yaml
 ports:
-  - "8080:8080"  # Change first number to your preferred port
+  - "8080:8080"  # Change first number to your preferred external port
 ```
 
-### Timezone List
+Then access PruneMate at `http://localhost:8080/`
 
-Common timezone examples:
+### Timezone Configuration
+
+PruneMate uses the `PRUNEMATE_TZ` environment variable to determine when scheduled cleanups should run.
+
+**Common timezone examples:**
 - `Europe/Amsterdam`
-- `Europe/London`
+- `Europe/London` 
+- `Europe/Berlin`
 - `America/New_York`
 - `America/Los_Angeles`
+- `America/Chicago`
 - `Asia/Tokyo`
+- `Asia/Singapore`
 - `Australia/Sydney`
 
-Full list: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>
+**Find your timezone:**  
+Full list of valid timezone names: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>
 
-### 12-Hour Time Format
+### 12-Hour vs 24-Hour Time Format
 
-Set `PRUNEMATE_TIME_24H=false` for AM/PM time display:
-- UI shows time picker with hour (1-12), minutes, and AM/PM selector
-- Notifications display times like "3:00 AM" or "5:30 PM"
-- Internal storage remains 24-hour format for consistency
+Control how times are displayed using the `PRUNEMATE_TIME_24H` environment variable:
+
+**24-Hour format (default):**
+```yaml
+environment:
+  - PRUNEMATE_TIME_24H=true
+```
+- Times shown as: `14:30`, `23:45`, `08:00`
+- Standard time input picker
+
+**12-Hour format (AM/PM):**
+```yaml
+environment:
+  - PRUNEMATE_TIME_24H=false
+```
+- Times shown as: `2:30 PM`, `11:45 PM`, `8:00 AM`
+- Custom time picker with hour (1-12), minutes, and AM/PM selector
+- Notifications display times like "3:00 PM" or "5:30 AM"
+
+**Note:** Internal scheduling always uses 24-hour format for consistency and reliability.
 
 ---
 
 ## 🧠 Troubleshooting
 
 | Problem | Solution |
-|--------|----------|
-| ❌ Can't access web interface | Check if port 7676 is open and not blocked by firewall |
-| ⚙️ Container not starting | Check logs: `docker logs prunemate` |
-| 🔒 Permission denied errors | Ensure Docker socket is accessible: `/var/run/docker.sock` |
-| 🕐 Wrong timezone | Set `PRUNEMATE_TZ` environment variable to your timezone |
-| 📧 Notifications not working | Verify notification provider settings and network connectivity |
-| 🗂️ Config not persisting | Ensure `./config` volume is mounted correctly |
+|---------|----------|
+| ❌ Can't access web interface | • Check if port 7676 is available and not blocked by firewall<br>• Verify container is running: `docker ps`<br>• Check logs: `docker logs prunemate` |
+| ⚙️ Container not starting | • View startup errors: `docker logs prunemate`<br>• Verify Docker socket is accessible<br>• Check if port 7676 is already in use |
+| 🔒 Permission denied errors | • Ensure `/var/run/docker.sock` exists and is accessible<br>• On Linux, Docker daemon must be running<br>• User running Docker must have proper permissions |
+| 🕐 Wrong timezone in logs/schedule | • Set `PRUNEMATE_TZ` environment variable correctly<br>• Restart container after changing: `docker-compose restart`<br>• Verify timezone in logs matches expected |
+| 📧 Notifications not working | • Test notification settings in web interface<br>• Verify notification server URL is accessible<br>• Check token/topic is correct<br>• Review logs for error messages |
+| 🗂️ Configuration not persisting | • Ensure `./config` volume is mounted correctly<br>• Check file permissions on host `./config` directory<br>• Verify container has write access |
+| 🧹 Cleanup not running on schedule | • Check schedule configuration in web interface<br>• Verify timezone is set correctly<br>• Review logs: "Next scheduled run" messages<br>• Ensure container is running continuously |
 
-### Debug Mode
+### Viewing Logs
 
-To see detailed logs:
-
+**Real-time container logs:**
 ```bash
 docker logs -f prunemate
 ```
 
-The log shows:
-- Scheduler heartbeats (every minute)
-- Configuration changes
-- Prune job executions
-- Notification delivery status
+**Persistent log file (on host):**
+```bash
+# View recent logs
+tail -f logs/prunemate.log
+
+# Search for specific events
+grep "Prune job" logs/prunemate.log
+grep "Notification" logs/prunemate.log
+```
+
+**What the logs contain:**
+- ✅ Scheduler heartbeats (every minute)
+- 📝 Configuration changes
+- 🧹 Prune job executions with results
+- 📨 Notification delivery status
+- ❌ Error messages and warnings
 
 ---
 
 ## 🔐 Security Notes
 
-- **Docker socket access:** PruneMate needs access to `/var/run/docker.sock` to manage Docker resources
-- **Network exposure:** By default, the web interface is exposed on port 7676. Use a reverse proxy with authentication for production
-- **Secrets:** Store sensitive tokens in environment variables or Docker secrets
-- **Updates:** Keep PruneMate updated to get security patches
+- **Docker socket access:** PruneMate requires access to `/var/run/docker.sock` to manage Docker resources. This grants full Docker API access, so ensure the container itself is properly secured.
 
----
+- **Network exposure:** By default, the web interface is exposed on port 7676 without authentication. For production environments:
+  - Use a reverse proxy (nginx, Traefik, Caddy) with authentication
+  - Restrict network access using Docker networks or firewall rules
+  - Consider using HTTPS with proper certificates
 
-## 🛠️ Development
+- **Read-only Docker socket:** The example configuration mounts the Docker socket as read-only (`:ro`), but PruneMate needs write access to perform cleanup operations. Remove `:ro` if you encounter permission errors:
+  ```yaml
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+  ```
 
-### Requirements
-
-- Python 3.10+
-- Docker SDK for Python
-- Flask, APScheduler, Gunicorn
-
-### Local Development
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run locally
-python prunemate.py
-```
-
-### Build Docker Image
-
-```bash
-docker build -t prunemate:latest .
-```
+- **Keep updated:** Regularly update PruneMate to get the latest security patches and features:
+  ```bash
+  docker-compose pull
+  docker-compose up -d
+  ```
 
 ---
 
 ## 📝 Changelog
 
-### Version 1.2.2
-- ✨ Added 12/24-hour time format support
-- 🌍 Improved timezone handling across all components
-- 🎨 Enhanced UI with better time picker for 12-hour mode
-- 🐛 Fixed config synchronization across workers
-- ⚡ Reduced workers to 1 for simplified architecture
-- 📝 Silent config loading to reduce log noise
-- 🔧 Better input validation and clamping
+### Version 1.2.2 (November 2025)
+- ✨ Added 12/24-hour time format support via `PRUNEMATE_TIME_24H` environment variable
+- 🌍 Improved timezone handling across all components (logs, scheduling, notifications)
+- 🎨 Enhanced UI with custom time picker for 12-hour mode (hour 1-12, minutes, AM/PM selector)
+- 🐛 Fixed config synchronization issues in multi-worker setup
+- ⚡ Simplified architecture: reduced from 2 workers to 1 for better reliability
+- 📝 Implemented silent config loading to reduce log noise
+- 🔧 Improved input validation with instant clamping and 2-digit limits
+- 🔒 Added thread-safe configuration saving with file locking
 
-### Version 1.2.1
+### Version 1.2.1 (October 2025)
 - 🐛 Fixed scheduler not triggering at configured times
-- 🔄 Config now reloads before scheduled checks
-- 🔒 Added thread-safe config saving
+- 🔄 Config now reloads before each scheduled check to ensure synchronization
+- 🔒 Added thread-safe config saving mechanism
+- 📊 Improved logging with timezone-aware timestamps
 
-### Version 1.2.0
+### Version 1.2.0 (September 2025)
 - 🔔 Added notification support (Gotify & ntfy.sh)
-- 🎨 Redesigned UI with modern dark theme
-- 📊 Enhanced statistics and reporting
+- 🎨 Complete UI redesign with modern dark theme
+- 📊 Enhanced statistics and detailed cleanup reporting
+- 🎯 Added "only notify on changes" option
+- 🔘 Improved button animations and hover effects
 
----
-
-## 👤 Author & License
-
-- Author: **Anoniemerd** — <https://github.com/anoniemerd>
-- Repository: <https://github.com/anoniemerd/PruneMate>
-
-Released under the **MIT License**.  
-© 2025 – PruneMate Project.
-
----
-
-## 🙏 Acknowledgments
-
-Built with:
-- [Flask](https://flask.palletsprojects.com/) - Web framework
-- [APScheduler](https://apscheduler.readthedocs.io/) - Job scheduling
-- [Docker SDK](https://docker-py.readthedocs.io/) - Docker integration
-- [Gunicorn](https://gunicorn.org/) - WSGI server
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### Version 1.0.0 (August 2025)
+- 🎉 Initial release
+- 🕐 Daily, Weekly, and Monthly scheduling
+- 🧹 Selective cleanup options (containers, images, networks, volumes)
+- 🌐 Web interface for configuration
+- 📁 Persistent configuration and logging
 
 ---
 
 ## 📬 Support
 
-- 🐛 **Bug reports:** Open an issue on GitHub
-- 💡 **Feature requests:** Open an issue on GitHub
-- 💬 **Questions:** Start a discussion on GitHub
+Have questions or need help?
+
+- 🐛 **Bug reports:** [Open an issue on GitHub](https://github.com/anoniemerd/PruneMate/issues)
+- 💡 **Feature requests:** [Open an issue on GitHub](https://github.com/anoniemerd/PruneMate/issues)
+- 💬 **Questions & Discussion:** [Start a discussion on GitHub](https://github.com/anoniemerd/PruneMate/discussions)
+- ⭐ **Like PruneMate?** Give it a star!
 
 ---
 
-**Keep your Docker host clean with PruneMate! 🧹✨**
+## 👤 Author & License
+
+**Author:** Anoniemerd  
+🐙 GitHub: <https://github.com/anoniemerd>  
+📦 Repository: <https://github.com/anoniemerd/PruneMate>
+
+**License:** MIT License  
+© 2025 – PruneMate Project
+
+---
+
+<p align="center">
+  <strong>Keep your Docker host clean with PruneMate! 🧹✨</strong>
+</p>
