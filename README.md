@@ -1,7 +1,8 @@
 # PruneMate
 
 <p align="center">
-  <img width="400" height="400" alt="prunemate-logo" src="static/prunemate.png" />
+  <img width="400" height="400" alt="prunemate-logo" src="<img width="1024" height="1024" alt="prunemate" src="https://github.com/user-attachments/assets/c1a923ff-f120-4254-ac7e-13961559259e" />
+" />
 </p>
 
 <h1 align="center">PruneMate</h1>
