@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PruneMate - Docker cleanup helper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" type="image/png"
+        href="{{ url_for('static', filename='prunemate-icon-embedded.svg') }}"/>
+
+  <style>
+    :root{
+      --bg-900: #020617;
+      --bg-800: #0b1120;
+      --accent: #0ea5e9;
+      --accent-strong: #22c55e;
+      --accent-soft: rgba(14,165,233,0.14);
+      --muted: #9ca3af;
+      --text: #e6eef6;
+      --card-border: rgba(148,163,184,0.06);
+      --glass-border: rgba(148,163,184,0.12);
+      --focus: 0 6px 24px rgba(14,165,233,0.12);
+      --shadow-strong: 0 32px 70px rgba(0,0,0,0.75);
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --btn-elev: 0 10px 30px rgba(16,185,129,0.15);
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{height:100%}
+    body {
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(600px 300px at 12% 6%, rgba(14,165,233,0.10), transparent 22%),
+        linear-gradient(135deg, var(--bg-900), var(--bg-800));
+      min-height:100vh;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:28px 16px;
+    }
+
+    .container{
+      width:100%;
+      max-width:820px;
+      background: linear-gradient(180deg, rgba(18,25,44,0.9), rgba(8,12,22,0.9));
+      border-radius:var(--radius-xl);
+      padding:26px;
+      position:relative;
+      box-shadow: var(--shadow-strong), 0 10px 35px rgba(2,6,23,0.6);
+      border:1px solid var(--glass-border);
+      overflow:hidden;
+      backdrop-filter: blur(6px) saturate(1.05);
+    }
+
+    .container::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      border-radius:inherit;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent 30%);
+      mix-blend-mode:overlay;
+    }
+
+    .header{display:flex;align-items:center;gap:18px;margin-bottom:12px}
+    .title-block{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;transform:translateY(4px)}
+    .logo-wrap{width:88px;height:88px;border-radius:20px;flex-shrink:0}
+    .logo-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+    .title-block h1{display:none}
+    .wordmark{height:44px;max-width:360px}
+    .title-block p{margin:6px 0 0 0;color:var(--muted);font-size:0.95rem}
+
+    h2{font-size:1.05rem;margin-top:1.4rem;margin-bottom:0.4rem;color:var(--text)}
+    h3{font-size:0.95rem;margin:6px 0 8px 0;color:var(--muted);font-weight:600}
+    label{font-size:0.95rem;color:var(--text)}
+
+    /* Flash messages */
+    .flash{padding:10px 12px;border-radius:12px;margin:10px 0;font-size:0.95rem}
+    .flash.info{background:linear-gradient(90deg, rgba(14,165,233,0.08), rgba(59,130,246,0.02));border:1px solid rgba(14,165,233,0.15);color:var(--text)}
+    .flash.warn{background:linear-gradient(90deg, rgba(245,158,11,0.06), transparent);border:1px solid rgba(245,158,11,0.12);color:#ffedd5}
+
+    /* Form inputs */
+    input[type="time"], select, input[type="number"], input[type="text"], input[type="password"]{
+      padding:8px 12px;border-radius:9999px;border:1px solid rgba(255,255,255,0.06);
+      background: rgba(2,6,23,0.6);color:var(--text);font-size:0.95rem;outline:none;
+      transition: box-shadow .16s ease, border-color .12s ease, transform .08s ease;
+      backdrop-filter: blur(6px);
+      font-family: "Montserrat", Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-weight:600;
+    }
+    input[type="time"]:focus, select:focus, input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus{
+      box-shadow: var(--focus);
+      border-color: rgba(14,165,233,0.6);
+    }
+
+    .row.inline .field{
+      min-width:160px;
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* Schedule: 3-column grid for consistent alignment */
+    .card.schedule .row.inline{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+      align-items:stretch;
+    }
+    .card.schedule .row.inline .field{
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+      width:100%;
+    }
+    /* Placeholder cell (third column on daily mode) keeps Time centered */
+    #schedule-placeholder{display:none;visibility:hidden;pointer-events:none;min-width:0;}
+    /* Schedule and notification labels: 2mm left padding for alignment */
+    .card.schedule .row.inline .field > label{margin:0 0 6px 0;line-height:1.3;display:block;padding-left:2mm;}
+    #notif-panel .row.inline .field > label{margin:0 0 6px 0;line-height:1.3;display:block;padding-left:2mm;}
+    /* Normalize input line-height and box-sizing for consistent pill heights */
+    .card.schedule .row.inline input,
+    .card.schedule .row.inline select{line-height:1.4;box-sizing:border-box;width:100%;}
+    /* Remove number input spinner for clean appearance */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button{ -webkit-appearance: none; margin:0; }
+    input[type="number"]{ -moz-appearance: textfield; appearance:textfield; }
+
+    select{width:100%; min-width:140px}
+    input[type="time"], input[type="number"]{width:100%}
+
+    .card{
+      background: linear-gradient(160deg, rgba(12,18,32,0.92), rgba(10,14,24,0.86));
+      border-radius:var(--radius-lg);
+      padding:16px;
+      border:1px solid var(--card-border);
+      box-shadow: 0 6px 26px rgba(3,6,14,0.5);
+      margin-top:10px;
+    }
+    .card.schedule{border-color:var(--accent-soft);box-shadow: 0 20px 60px rgba(8,15,28,0.6), 0 0 40px rgba(14,165,233,0.06)}
+
+    .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:8px}
+    .row.inline{align-items:center}
+    .row .field{min-width:160px}
+    /* Global label indent (8px default, schedule grid overrides to 2mm) */
+    .field > label:first-child{padding-left:8px;display:block;}
+    .card.schedule .row.inline .field > label:first-child{padding-left:2mm;}
+
+    /* Buttons: consistent vertical centering with asymmetric padding (text nudged up 1mm) */
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;padding:9px 20px 11px 20px;font-size:0.95rem;font-weight:600;cursor:pointer;border:none;transition:transform .08s ease,box-shadow .12s ease,opacity .12s ease; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height:1.05;}
+    .btn-primary{background:linear-gradient(90deg,#22c55e,#16a34a);color:#05220f;box-shadow:var(--btn-elev);padding:9px 24px 11px 24px}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 44px rgba(16,185,129,0.14)}
+    /* Secondary button: subtle glass effect with theme border */
+    .btn-secondary{background:linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02));color:var(--text);border:1px solid var(--glass-border);padding:9px 22px 11px 22px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.015),0 4px 14px rgba(2,6,23,0.5);backdrop-filter:blur(4px) saturate(1.1);white-space:nowrap;}
+    .btn-secondary:hover{transform:translateY(-2px);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03));border-color:rgba(148,163,184,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.015),0 8px 24px rgba(2,6,23,0.6);}
+    .btn-secondary:active{transform:translateY(1px);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03),0 2px 10px rgba(2,6,23,0.55);}
+
+    .hint{font-size:0.82rem;color:var(--muted);margin-top:6px}
+    .footer{text-align:center;margin-top:18px;font-size:0.82rem;color:#9aa4b2}
+
+    /* Toggle switches */
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
+    .toggle-row span.label-text{font-size:0.95rem;color:var(--text)}
+    .switch{position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;cursor:pointer;inset:0;background-color:#374151;border-radius:9999px;transition:.18s;border:1px solid rgba(0,0,0,0.25)}
+    /* Slider knob: 4px horizontal margin for equal spacing */
+    .slider:before{position:absolute;content:"";height:18px;width:18px;left:4px;bottom:4px;background-color:#fff;transition:.18s;border-radius:9999px;box-shadow:0 4px 12px rgba(2,6,23,0.55)}
+    .switch input:checked + .slider{background:linear-gradient(90deg,var(--accent-strong),#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.14)}
+    .switch input:checked + .slider:before{transform:translateX(22px)}
+    .switch input:disabled + .slider{opacity:0.4;cursor:default;box-shadow:none}
+
+    .toast {
+      position:fixed;
+      left:50%;
+      top:20px;
+      transform:translateX(-50%) translateY(-12px);
+      background: linear-gradient(90deg, rgba(34,197,94,0.12), rgba(14,165,233,0.08));
+      color: #e6fff0;
+      border: 1px solid rgba(34,197,94,0.18);
+      padding:14px 20px;
+      border-radius:12px;
+      box-shadow: 0 18px 50px rgba(2,6,23,0.6);
+      font-weight:700;
+      font-family: "Montserrat", Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      letter-spacing:0.2px;
+      opacity:0;
+      pointer-events:none;
+      transition: transform .28s cubic-bezier(.2,.9,.3,1), opacity .28s ease;
+      z-index:1200;
+      max-width:calc(100% - 48px);
+      text-align:center;
+    }
+    .toast.show {
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+      pointer-events:auto;
+    }
+
+    .toast .close {
+      margin-left:12px;
+      background:transparent;
+      border:none;
+      color:inherit;
+      font-weight:800;
+      cursor:pointer;
+      opacity:0.9;
+    }
+
+
+    @media (max-width: 640px){
+      .container{padding:18px;border-radius:18px}
+      .row.inline{flex-direction:column;align-items:flex-start;gap:10px}
+      select,input[type="time"],input[type="number"]{width:100%}
+      .logo-wrap{width:72px;height:72px}
+      .wordmark{height:36px}
+    }
+
+    .muted{color:var(--muted)}
+    .visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+    /* Collapsible notification panel */
+    #notif-card #notif-panel{transition:max-height .32s cubic-bezier(.25,.8,.25,1);}
+    #notif-card.collapsed #notif-panel{max-height:0!important;}
+    #notif-card:not(.collapsed) #notif-panel{max-height:800px;}
+    #notif-arrow{transition:transform .28s ease;}
+    #notif-card.collapsed #notif-arrow{transform:rotate(0deg);}
+    #notif-card:not(.collapsed) #notif-arrow{transform:rotate(180deg);}
+  </style>
+</head>
+<body>
+  {% set _flashes = get_flashed_messages(with_categories=false) %}
+  <div id="toast" class="toast" data-message="{% if _flashes %}{{ _flashes[0] | e }}{% endif %}">
+    <span id="toast-text"></span>
+    <button id="toast-close" class="close" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <div class="logo-wrap">
+        <img src="{{ url_for('static', filename='prunemate.png') }}"
+             alt="prunemate logo" />
+      </div>
+      <div class="title-block">
+        <h1 class="visually-hidden">PruneMate</h1>
+        <svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 48" role="img" aria-label="PruneMate">
+          <defs>
+            <style>
+              .wm { font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif; font-weight:700; font-size:40px; }
+              .blue { fill: #0ea5e9; }
+              .white { fill: #ffffff; }
+            </style>
+          </defs>
+          <text class="wm" x="0" y="36">
+            <tspan class="blue">Prune</tspan>
+            <tspan class="white" dx="-11">Mate</tspan>
+          </text>
+        </svg>
+        <p>Docker image & resource cleanup helper, on a schedule!</p>
+       </div>
+    </div>
+
+    <form method="post" action="{{ url_for('update') }}">
+      <h2>Schedule</h2>
+      <div class="card schedule">
+        <div class="row inline">
+          <div class="field">
+            <label for="frequency">Frequency</label><br/>
+            <select id="frequency" name="frequency" aria-label="Frequency">
+              <option value="daily" {% if config.frequency == 'daily' %}selected{% endif %}>Daily</option>
+              <option value="weekly" {% if config.frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+              <option value="monthly" {% if config.frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="time">Time</label><br />
+            {% if use_24h %}
+            <input
+              type="time"
+              id="time"
+              name="time"
+              value="{{ config.time or '03:00' }}"
+              required
+            />
+            {% else %}
+            <!-- 12-hour time picker -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input 
+                type="number" 
+                id="time-hour" 
+                name="time_hour" 
+                min="1" 
+                max="12" 
+                required 
+                style="width: 60px; text-align: center;"
+              />
+              <span style="font-weight: 600;">:</span>
+              <input 
+                type="number" 
+                id="time-minute" 
+                name="time_minute" 
+                min="0" 
+                max="59" 
+                required 
+                style="width: 60px; text-align: center;"
+              />
+              <select id="time-period" name="time_period" required style="width: auto; min-width: 80px;">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+              <input type="hidden" id="time" name="time" value="{{ config.time or '03:00' }}" />
+            </div>
+            {% endif %}
+          </div>
+
+          <div id="week-row" class="field" style="display:none;">
+            <label for="day_of_week">Day of the week</label><br/>
+            <select id="day_of_week" name="day_of_week">
+              {% set days = [
+                ('mon', 'Monday'),
+                ('tue', 'Tuesday'),
+                ('wed', 'Wednesday'),
+                ('thu', 'Thursday'),
+                ('fri', 'Friday'),
+                ('sat', 'Saturday'),
+                ('sun', 'Sunday')
+              ] %}
+              {% for val, label in days %}
+                <option value="{{ val }}" {% if config.day_of_week == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div id="month-row" class="field" style="display:none;">
+            <label for="day_of_month">Day of the month</label><br/>
+            <input
+              type="number"
+              id="day_of_month"
+              name="day_of_month"
+              min="1"
+              max="31"
+              value="{{ config.day_of_month or 1 }}"
+            />
+          </div>
+          <div id="schedule-placeholder" class="field" style="display:none;"></div>
+        </div>
+       <p class="hint" style="margin-top:8px;">
+         Using Timezone: {{ timezone }} · Time format: {{ '24-hour' if use_24h else '12-hour (AM/PM)' }}<br>
+       </p>
+      </div>
+
+      <h2>Cleanup options</h2>
+      <div class="card">
+        <div class="toggle-row">
+          <span class="label-text">All unused containers</span>
+          <label class="switch">
+            <input type="checkbox" name="prune_containers"
+                   {% if config.prune_containers %}checked{% endif %}>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <span class="label-text">All unused images</span>
+          <label class="switch">
+            <input type="checkbox" name="prune_images"
+                   {% if config.prune_images %}checked{% endif %}>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <span class="label-text">All unused networks</span>
+          <label class="switch">
+            <input type="checkbox" name="prune_networks"
+                   {% if config.prune_networks %}checked{% endif %}>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <span class="label-text">All unused volumes</span>
+          <label class="switch">
+            <input type="checkbox" name="prune_volumes"
+                   {% if config.prune_volumes %}checked{% endif %}>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <h2>Notifications</h2>
+      <div class="card collapsed" id="notif-card">
+        <button type="button" id="notif-header" aria-expanded="false" aria-controls="notif-panel"
+          style="all:unset;display:flex;width:100%;cursor:pointer;align-items:center;justify-content:space-between;padding:4px 0 8px 0;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+              <path d="M15 17H9a3 3 0 0 0 6 0z" fill="#9ca3af"></path>
+              <path d="M12 3a5 5 0 0 0-5 5v2.2a5 5 0 0 1-.9 2.8L5 15h14l-1.1-1.0a5 5 0 0 1-.9-2.8V8a5 5 0 0 0-5-5z" fill="#9ca3af"></path>
+            </svg>
+            <div>
+              <strong>Notification settings</strong>
+              <div class="hint">Select provider & configure fields</div>
+            </div>
+          </div>
+          <span id="notif-arrow" style="font-size:1.05rem;transition:.2s;">▼</span>
+        </button>
+
+        <div id="notif-panel" style="overflow:hidden;">
+          <div class="row inline" style="margin-top:4px;">
+            <div class="field">
+              <label for="notifications_provider">Provider</label><br/>
+              <select id="notifications_provider" name="notifications_provider" aria-label="Notification provider">
+                <option value="gotify" {% if config.notifications.provider == 'gotify' %}selected{% endif %}>Gotify</option>
+                <option value="ntfy" {% if config.notifications.provider == 'ntfy' %}selected{% endif %}>ntfy</option>
+              </select>
+            </div>
+          </div>
+          <!-- 'Only notify when changes' toggle (dynamically repositioned per provider) -->
+          <div id="only-on-changes-wrapper" style="margin-top:6px;">
+            <div class="toggle-row" style="padding:4px 0 0 0;">
+              <span class="label-text" id="only-on-changes-label">Only notify when something was pruned</span>
+              <label class="switch">
+                <input type="checkbox" name="notifications_only_on_changes" id="notifications_only_on_changes" aria-labelledby="only-on-changes-label" {% if config.notifications.only_on_changes %}checked{% endif %}>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="hint" style="margin:2px 0 14px 0; text-align:right;">*When disabled, PruneMate sends a notification after every run.</div>
+          </div>
+
+          <!-- Gotify specific fields -->
+          <div id="gotify-fields" style="margin-top:12px;">
+            <div class="toggle-row">
+              <span class="label-text" id="gotify-enable-label">Enable Gotify notifications</span>
+              <label class="switch">
+                <input type="checkbox" name="gotify_enabled" id="gotify_enabled" aria-labelledby="gotify-enable-label"
+                       {% if config.notifications.gotify.enabled %}checked{% endif %}>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <div style="flex:1;">
+                <label for="gotify_url">Gotify URL :</label>
+                <input type="text" id="gotify_url" name="gotify_url"
+                       value="{{ config.notifications.gotify.url or '' }}"
+                       placeholder="https://gotify.example.com" aria-label="Gotify server URL">
+              </div>
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <div style="flex:1;">
+                <label for="gotify_token">Gotify App Token :</label>
+                <input type="password" id="gotify_token" name="gotify_token" autocomplete="off"
+                       value="{{ config.notifications.gotify.token or '' }}"
+                       placeholder="App token" aria-label="Gotify application token">
+              </div>
+            </div>
+          </div>
+
+          <!-- ntfy specific fields -->
+          <div id="ntfy-fields" style="margin-top:12px;display:none;">
+            <div class="toggle-row">
+              <span class="label-text" id="ntfy-enable-label">Enable ntfy notifications</span>
+              <label class="switch">
+                <input type="checkbox" name="ntfy_enabled" id="ntfy_enabled" aria-labelledby="ntfy-enable-label"
+                       {% if config.notifications.ntfy.enabled %}checked{% endif %}>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <div style="flex:1;">
+                <label for="ntfy_url">ntfy URL :</label>
+                <input type="text" id="ntfy_url" name="ntfy_url"
+                       value="{{ config.notifications.ntfy.url or '' }}"
+                       placeholder="https://ntfy.server" aria-label="ntfy server URL">
+              </div>
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <div style="flex:1;">
+                <label for="ntfy_topic">ntfy Topic :</label>
+                <input type="text" id="ntfy_topic" name="ntfy_topic"
+                       value="{{ config.notifications.ntfy.topic or '' }}"
+                       placeholder="topic/name" aria-label="ntfy topic name">
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <button type="submit"
+                    class="btn btn-secondary"
+                    formaction="{{ url_for('test_notification') }}"
+                    formmethod="post">
+              Send test notification
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <button type="submit" class="btn btn-primary">
+          Save &amp; Schedule
+        </button>
+      </div>
+    </form>
+
+    <form method="post" action="{{ url_for('run_now') }}" style="margin-top: 10px;">
+      <button type="submit" class="btn btn-secondary">
+        Run now
+      </button>
+    </form>
+
+    <div class="footer">
+      PruneMate · 2025 · V1.2.2 ·
+      <a href="https://github.com/anoniemerd/PruneMate" target="_blank">GitHub</a>
+    </div>
+  </div>
+
+  <script>
+    // Show appropriate day selector (week/month) or placeholder based on frequency
+    function updateScheduleVisibility() {
+      const freq = document.getElementById('frequency').value;
+      const weekRow = document.getElementById('week-row');
+      const monthRow = document.getElementById('month-row');
+      const placeholder = document.getElementById('schedule-placeholder');
+
+      if(freq === 'weekly'){
+        weekRow.style.display = 'flex';
+        monthRow.style.display = 'none';
+        placeholder.style.display = 'none';
+      } else if(freq === 'monthly'){
+        weekRow.style.display = 'none';
+        monthRow.style.display = 'flex';
+        placeholder.style.display = 'none';
+      } else { // daily
+        weekRow.style.display = 'none';
+        monthRow.style.display = 'none';
+        placeholder.style.display = 'flex';
+      }
+    }
+
+    // Clamp day_of_month input to valid range (1–31)
+    function initDayOfMonthClamp(){
+      const domInput = document.getElementById('day_of_month');
+      if (!domInput) return;
+      const clamp = () => {
+        const v = domInput.value.trim();
+        if (v === '') return;
+        let n = parseInt(v, 10);
+        if (Number.isNaN(n)) { domInput.value = 1; return; }
+        if (n < 1) n = 1;
+        if (n > 31) n = 31;
+        if (String(n) !== domInput.value) domInput.value = n;
+      };
+      domInput.addEventListener('input', () => {
+        const v = domInput.value;
+        const n = parseInt(v, 10);
+        if (!Number.isNaN(n) && (n < 1 || n > 31)) {
+          domInput.value = Math.max(1, Math.min(31, n));
+        }
+      });
+      domInput.addEventListener('blur', clamp);
+      clamp();
+    }
+
+    // Clamp time hour/minute inputs for 12h format
+    function initTimeClamp(){
+      const hourInput = document.getElementById('time-hour');
+      const minuteInput = document.getElementById('time-minute');
+      if (!hourInput || !minuteInput) return;
+      
+      // Hour: 1-12, max 2 digits
+      const clampHour = () => {
+        let v = hourInput.value.trim();
+        if (v === '') return;
+        // Limit to 2 digits
+        if (v.length > 2) v = v.slice(0, 2);
+        let n = parseInt(v, 10);
+        if (Number.isNaN(n)) { hourInput.value = 12; return; }
+        if (n < 1) n = 1;
+        if (n > 12) n = 12;
+        hourInput.value = n;
+      };
+      hourInput.addEventListener('input', () => {
+        let v = hourInput.value;
+        if (v.length > 2) {
+          hourInput.value = v.slice(0, 2);
+          v = hourInput.value;
+        }
+        const n = parseInt(v, 10);
+        if (!Number.isNaN(n) && (n < 1 || n > 12)) {
+          hourInput.value = Math.max(1, Math.min(12, n));
+        }
+      });
+      hourInput.addEventListener('blur', clampHour);
+      
+      // Minute: 0-59, max 2 digits
+      const clampMinute = () => {
+        let v = minuteInput.value.trim();
+        if (v === '') { minuteInput.value = '00'; return; }
+        // Limit to 2 digits
+        if (v.length > 2) v = v.slice(0, 2);
+        let n = parseInt(v, 10);
+        if (Number.isNaN(n)) { minuteInput.value = '00'; return; }
+        if (n < 0) n = 0;
+        if (n > 59) n = 59;
+        minuteInput.value = String(n).padStart(2, '0');
+      };
+      minuteInput.addEventListener('input', () => {
+        let v = minuteInput.value;
+        if (v.length > 2) {
+          minuteInput.value = v.slice(0, 2);
+          v = minuteInput.value;
+        }
+        const n = parseInt(v, 10);
+        if (!Number.isNaN(n) && (n < 0 || n > 59)) {
+          minuteInput.value = String(Math.max(0, Math.min(59, n))).padStart(2, '0');
+        }
+      });
+      minuteInput.addEventListener('blur', clampMinute);
+    }
+
+    // Display and auto-hide flash message toast
+    (function initToast() {
+      try {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        const msg = toast.dataset.message || '';
+        const textEl = document.getElementById('toast-text');
+        const closeBtn = document.getElementById('toast-close');
+
+        if (!msg) {
+          toast.classList.remove('show');
+          return;
+        }
+
+        textEl.textContent = msg;
+        requestAnimationFrame(() => toast.classList.add('show'));
+
+        // Auto-hide after 5 seconds
+        const hide = () => toast.classList.remove('show');
+        const timer = setTimeout(hide, 5000);
+
+        closeBtn.addEventListener('click', () => {
+          clearTimeout(timer);
+          hide();
+        });
+
+        // Hide on Escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            clearTimeout(timer);
+            hide();
+          }
+        }, { once: true });
+      } catch (e) {
+        console.warn('Toast init failed', e);
+      }
+    })();
+
+    // Show fields for the selected notification provider
+    function updateNotifUI(){
+      const prov = document.getElementById('notifications_provider').value;
+      const gotifyBlock = document.getElementById('gotify-fields');
+      const ntfyBlock = document.getElementById('ntfy-fields');
+      const toggleWrapper = document.getElementById('only-on-changes-wrapper');
+      if(!gotifyBlock || !ntfyBlock || !toggleWrapper) return;
+      if(prov === 'gotify'){
+        gotifyBlock.style.display = 'block';
+        ntfyBlock.style.display = 'none';
+        if(gotifyBlock.firstElementChild){
+          gotifyBlock.insertBefore(toggleWrapper, gotifyBlock.firstElementChild.nextSibling);
+        } else {
+          gotifyBlock.appendChild(toggleWrapper);
+        }
+      } else {
+        gotifyBlock.style.display = 'none';
+        ntfyBlock.style.display = 'block';
+        if(ntfyBlock.firstElementChild){
+          ntfyBlock.insertBefore(toggleWrapper, ntfyBlock.firstElementChild.nextSibling);
+        } else {
+          ntfyBlock.appendChild(toggleWrapper);
+        }
+      }
+    }
+
+    // Manage collapsible notification settings panel
+    function initNotificationCollapse(){
+      const notifCard = document.getElementById('notif-card');
+      const notifHeader = document.getElementById('notif-header');
+      const notifPanel = document.getElementById('notif-panel');
+      const notifArrow = document.getElementById('notif-arrow');
+      if(!notifCard || !notifHeader || !notifPanel) return;
+      function setNotif(open){
+        if(open){
+          notifCard.classList.remove('collapsed');
+          notifPanel.style.maxHeight = notifPanel.scrollHeight + 'px';
+          notifHeader.setAttribute('aria-expanded','true');
+        } else {
+          notifCard.classList.add('collapsed');
+          notifPanel.style.maxHeight = '0px';
+          notifHeader.setAttribute('aria-expanded','false');
+        }
+      }
+      setNotif(false);
+      notifHeader.addEventListener('click', () => {
+        const isOpen = notifHeader.getAttribute('aria-expanded') === 'true';
+        setNotif(!isOpen);
+      });
+    }
+
+    // Initialize all components after DOM ready
+    document.addEventListener('DOMContentLoaded', function(){
+      updateScheduleVisibility();
+      document.getElementById('frequency').addEventListener('change', updateScheduleVisibility);
+      initDayOfMonthClamp();
+      initTimeClamp();
+      const provEl = document.getElementById('notifications_provider');
+      if(provEl){
+        provEl.addEventListener('change', updateNotifUI);
+        updateNotifUI();
+      }
+      initNotificationCollapse();
+      
+      {% if not use_24h %}
+      // Initialize 12-hour time picker with current value
+      const timeHidden = document.getElementById('time');
+      const timeHour = document.getElementById('time-hour');
+      const timeMinute = document.getElementById('time-minute');
+      const timePeriod = document.getElementById('time-period');
+      
+      if(timeHidden && timeHour && timeMinute && timePeriod){
+        // Parse initial 24h time and set 12h fields
+        function init12hTime(){
+          const time24 = timeHidden.value;
+          const [h24Str, min] = time24.split(':');
+          const h24 = parseInt(h24Str);
+          let h12, period;
+          
+          if(h24 === 0){
+            h12 = 12;
+            period = 'AM';
+          } else if(h24 < 12){
+            h12 = h24;
+            period = 'AM';
+          } else if(h24 === 12){
+            h12 = 12;
+            period = 'PM';
+          } else {
+            h12 = h24 - 12;
+            period = 'PM';
+          }
+          
+          timeHour.value = h12;
+          timeMinute.value = parseInt(min);
+          timePeriod.value = period;
+        }
+        
+        // Convert 12h to 24h and update hidden field
+        function update24hTime(){
+          let h12 = parseInt(timeHour.value) || 0;
+          let min = parseInt(timeMinute.value) || 0;
+          const period = timePeriod.value;
+          
+          // Clamp values
+          h12 = Math.max(1, Math.min(12, h12));
+          min = Math.max(0, Math.min(59, min));
+          
+          // Update inputs with clamped values
+          timeHour.value = h12;
+          timeMinute.value = min;
+          
+          let h24;
+          if(period === 'AM'){
+            h24 = h12 === 12 ? 0 : h12;
+          } else {
+            h24 = h12 === 12 ? 12 : h12 + 12;
+          }
+          
+          timeHidden.value = String(h24).padStart(2, '0') + ':' + String(min).padStart(2, '0');
+        }
+        
+        init12hTime();
+        
+        // Update hidden field when 12h fields change
+        timeHour.addEventListener('change', update24hTime);
+        timeMinute.addEventListener('change', update24hTime);
+        timePeriod.addEventListener('change', update24hTime);
+      }
+      {% endif %}
+    });
+  </script>
+</body>
+</html>
