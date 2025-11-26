@@ -2,7 +2,6 @@
 
 <p align="center">
   <img width="400" height="400" alt="prunemate-logo" src="https://github.com/user-attachments/assets/0785ea56-88f6-4926-9ae1-de736840c378" />
-" />
 </p>
 
 <h1 align="center">PruneMate</h1>
@@ -40,28 +39,28 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 ### Main Dashboard
 The overall look of the PruneMate dashboard
 <p align="center">
-  <img width="800" alt="prunemate-schedule" src="https://github.com/user-attachments/assets/797c6c13-3078-4afb-a0db-2e05e16fba33" /> 
+  <img width="400" height="400" src="https://github.com/user-attachments/assets/797c6c13-3078-4afb-a0db-2e05e16fba33" /> 
 </p>
 
 ### Main Dashboard - Schedule Configuration
 Configure when and how often PruneMate should clean up your Docker resources.
 
 <p align="center">
-  <img width="800" alt="prunemate-schedule" src="https://github.com/user-attachments/assets/3a822897-5ede-4476-b570-f4d8adf37867" /> 
+  <img width="400" height="400" alt="prunemate-schedule" src="https://github.com/user-attachments/assets/3a822897-5ede-4476-b570-f4d8adf37867" /> 
 </p>
 
 ### Cleanup Options & Settings
 Select which Docker resources to clean up and configure advanced options.
 
 <p align="center">
-  <img width="800" alt="prunemate-cleanup" src="https://github.com/user-attachments/assets/70ae1e8f-49a1-4c89-ac46-685d804ee3db" />
+  <img width="400" height="400" alt="prunemate-cleanup" src="https://github.com/user-attachments/assets/70ae1e8f-49a1-4c89-ac46-685d804ee3db" />
 </p>
 
 ### Notification Settings
 Set up notifications via Gotify or ntfy.sh to stay informed about cleanup results.
 
 <p align="center">
-  <img width="800" alt="prunemate-notifications" src="https://github.com/user-attachments/assets/4dab89c5-a6fe-482c-9b0b-09464b73933c" /> 
+  <iimg width="400" height="400" alt="prunemate-notifications" src="https://github.com/user-attachments/assets/4dab89c5-a6fe-482c-9b0b-09464b73933c" /> 
 </p>
 
 ### Cleanup Results
@@ -69,12 +68,12 @@ Get detailed statistics notifications about what was cleaned and how much space 
 
 Gotify :
 <p align="center">
-  <img width="800" alt="prunemate-results" src="https://github.com/user-attachments/assets/26c1eccb-96c1-4385-8a1a-ef8c4587909e" /> 
+  <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/26c1eccb-96c1-4385-8a1a-ef8c4587909e" /> 
 </p>
 
 ntfy :
 <p align="center">
-  <img width="800" alt="prunemate-results" src="https://github.com/user-attachments/assets/232acb54-b06f-46b7-b829-df7a10dd4a6a" />
+  <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/232acb54-b06f-46b7-b829-df7a10dd4a6a" />
 </p>
 
 
@@ -362,22 +361,9 @@ environment:
 | 🗂️ Configuration not persisting | • Ensure `./config` volume is mounted correctly<br>• Check file permissions on host `./config` directory<br>• Verify container has write access |
 | 🧹 Cleanup not running on schedule | • Check schedule configuration in web interface<br>• Verify timezone is set correctly<br>• Review logs: "Next scheduled run" messages<br>• Ensure container is running continuously |
 
-### Viewing Logs
+---
 
-**Real-time container logs:**
-```bash
-docker logs -f prunemate
-```
-
-**Persistent log file (on host):**
-```bash
-# View recent logs
-tail -f logs/prunemate.log
-
-# Search for specific events
-grep "Prune job" logs/prunemate.log
-grep "Notification" logs/prunemate.log
-```
+### Logging
 
 **What the logs contain:**
 - ✅ Scheduler heartbeats (every minute)
@@ -385,29 +371,6 @@ grep "Notification" logs/prunemate.log
 - 🧹 Prune job executions with results
 - 📨 Notification delivery status
 - ❌ Error messages and warnings
-
----
-
-## 🔐 Security Notes
-
-- **Docker socket access:** PruneMate requires access to `/var/run/docker.sock` to manage Docker resources. This grants full Docker API access, so ensure the container itself is properly secured.
-
-- **Network exposure:** By default, the web interface is exposed on port 7676 without authentication. For production environments:
-  - Use a reverse proxy (nginx, Traefik, Caddy) with authentication
-  - Restrict network access using Docker networks or firewall rules
-  - Consider using HTTPS with proper certificates
-
-- **Read-only Docker socket:** The example configuration mounts the Docker socket as read-only (`:ro`), but PruneMate needs write access to perform cleanup operations. Remove `:ro` if you encounter permission errors:
-  ```yaml
-  volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
-  ```
-
-- **Keep updated:** Regularly update PruneMate to get the latest security patches and features:
-  ```bash
-  docker-compose pull
-  docker-compose up -d
-  ```
 
 ---
 
@@ -423,20 +386,20 @@ grep "Notification" logs/prunemate.log
 - 🔧 Improved input validation with instant clamping and 2-digit limits
 - 🔒 Added thread-safe configuration saving with file locking
 
-### Version 1.2.1 (October 2025)
+### Version 1.2.1 (November 2025)
 - 🐛 Fixed scheduler not triggering at configured times
 - 🔄 Config now reloads before each scheduled check to ensure synchronization
 - 🔒 Added thread-safe config saving mechanism
 - 📊 Improved logging with timezone-aware timestamps
 
-### Version 1.2.0 (September 2025)
+### Version 1.2.0 (November 2025)
 - 🔔 Added notification support (Gotify & ntfy.sh)
 - 🎨 Complete UI redesign with modern dark theme
 - 📊 Enhanced statistics and detailed cleanup reporting
 - 🎯 Added "only notify on changes" option
 - 🔘 Improved button animations and hover effects
 
-### Version 1.0.0 (August 2025)
+### Version 1.1.0 (October 2025)
 - 🎉 Initial release
 - 🕐 Daily, Weekly, and Monthly scheduling
 - 🧹 Selective cleanup options (containers, images, networks, volumes)
