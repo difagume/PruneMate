@@ -79,51 +79,6 @@ ntfy :
 
 ---
 
-## 🚀 Quick Start with Docker Compose
-
-### Prerequisites
-
-- Docker and Docker Compose installed
-- Access to Docker socket (`/var/run/docker.sock`)
-
-### Installation
-
-1. **Clone the repository:**
-
-```bash
-git clone https://github.com/anoniemerd/PruneMate.git
-cd PruneMate
-```
-
-2. **Configure your settings** (optional):
-
-Edit `docker-compose.yaml` to customize your timezone and time format:
-
-```yaml
-environment:
-  - PRUNEMATE_TZ=Europe/Amsterdam     # Your local timezone
-  - PRUNEMATE_TIME_24H=true           # true = 24h format, false = 12h (AM/PM)
-```
-
-3. **Start PruneMate:**
-
-```bash
-docker-compose up -d
-```
-
-4. **Access the web interface:**
-
-Open your browser and navigate to:
-```
-http://localhost:7676/
-```
-or
-```
-http://<your-server-ip>:7676/
-```
-
----
-
 ## 🐳 Docker Compose Configuration
 
 Complete example of `docker-compose.yaml`:
@@ -266,10 +221,10 @@ docker-compose down
 [ntfy.sh](https://ntfy.sh/) is a simple pub-sub notification service (self-hosted or public).
 
 **Setup steps:**
-1. Choose a unique topic name (e.g., `prunemate-alerts-YOUR-RANDOM-STRING`)
+1. Choose a unique topic name (e.g., `prunemate-alerts`)
 2. Configure in PruneMate:
    - **Provider:** ntfy
-   - **URL:** `https://ntfy.sh` (or your self-hosted instance)
+   - **URL:** `https://ntfy.sh` (your self-hosted instance)
    - **Topic:** Your chosen topic name
 
 **Subscribe to notifications:**
@@ -277,75 +232,6 @@ docker-compose down
 - **Mobile:** Install the ntfy app ([Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy) / [iOS](https://apps.apple.com/app/ntfy/id1625396347)) and subscribe to your topic
 - **Desktop:** Use ntfy desktop app or web browser
 
-**Example notification:**
-```
-🧹 PruneMate Cleanup Report
-Daily cleanup completed
-
-Cleaned:
-• 3 containers
-• 5 images (2.3 GB)
-• 2 networks
-• 1 volume (450 MB)
-
-Total space reclaimed: 2.75 GB
-```
-
----
-
-## 🧩 Advanced Configuration
-
-### Custom Port
-
-Change the exposed port in `docker-compose.yaml`:
-
-```yaml
-ports:
-  - "8080:8080"  # Change first number to your preferred external port
-```
-
-Then access PruneMate at `http://localhost:8080/`
-
-### Timezone Configuration
-
-PruneMate uses the `PRUNEMATE_TZ` environment variable to determine when scheduled cleanups should run.
-
-**Common timezone examples:**
-- `Europe/Amsterdam`
-- `Europe/London` 
-- `Europe/Berlin`
-- `America/New_York`
-- `America/Los_Angeles`
-- `America/Chicago`
-- `Asia/Tokyo`
-- `Asia/Singapore`
-- `Australia/Sydney`
-
-**Find your timezone:**  
-Full list of valid timezone names: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>
-
-### 12-Hour vs 24-Hour Time Format
-
-Control how times are displayed using the `PRUNEMATE_TIME_24H` environment variable:
-
-**24-Hour format (default):**
-```yaml
-environment:
-  - PRUNEMATE_TIME_24H=true
-```
-- Times shown as: `14:30`, `23:45`, `08:00`
-- Standard time input picker
-
-**12-Hour format (AM/PM):**
-```yaml
-environment:
-  - PRUNEMATE_TIME_24H=false
-```
-- Times shown as: `2:30 PM`, `11:45 PM`, `8:00 AM`
-- Custom time picker with hour (1-12), minutes, and AM/PM selector
-- Notifications display times like "3:00 PM" or "5:30 AM"
-
-**Note:** Internal scheduling always uses 24-hour format for consistency and reliability.
 
 ---
 
@@ -431,5 +317,5 @@ Have questions or need help?
 ---
 
 <p align="center">
-  <strong>Keep your Docker host clean with PruneMate! 🧹✨</strong>
+  <strong>Keep your Docker host clean with PruneMate! 🐳🧹</strong>
 </p>
