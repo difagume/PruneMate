@@ -8,7 +8,7 @@
 <p align="center"><em>Docker image & resource cleanup helper, on a schedule!</em></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.2-blue?style=flat-square"/>
+  <img src="https://img.shields.io/badge/version-1.2.3-blue?style=flat-square"/>
   <img src="https://img.shields.io/badge/python-3.10%2B-green?style=flat-square"/>
   <img src="https://img.shields.io/badge/docker-compose-0db7ed?style=flat-square"/>
   <img src="https://img.shields.io/badge/license-AGPLv3-orange?style=flat-square"/>
@@ -84,14 +84,22 @@ ntfy :
 
 ---
 
-## 🐳 Docker Compose Configuration
+## 🚀 Quick Start with Docker Compose
 
-`docker-compose.yaml`:
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Access to Docker socket (`/var/run/docker.sock`)
+
+### Installation
+
+1. **Create a `docker-compose.yaml` file:**
 
 ```yaml
 services:
   prunemate:
     image: anoniemerd/prunemate:latest
+    container_name: prunemate
     ports:
       - "7676:8080"
     volumes:
@@ -103,6 +111,56 @@ services:
       - PRUNEMATE_TIME_24H=true #false for 12-Hour format (AM/PM)
     restart: unless-stopped
 ```
+
+**For ARM64 systems (Apple Silicon, ARM servers, Raspberry Pi):**
+
+If you get "no matching manifest for linux/arm64" error, clone the repository and build locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/anoniemerd/PruneMate.git
+cd PruneMate
+```
+
+Then use this docker-compose.yaml:
+
+```yaml
+services:
+  prunemate:
+    build: .  # Build locally instead of using pre-built image
+    container_name: prunemate
+    ports:
+      - "7676:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./logs:/var/log
+      - ./config:/config
+    environment:
+      - PRUNEMATE_TZ=Europe/Amsterdam
+      - PRUNEMATE_TIME_24H=true
+    restart: unless-stopped
+```
+
+2. **Start PruneMate:**
+
+```bash
+docker-compose up -d
+```
+
+3. **Access the web interface:**
+
+Open your browser and navigate to:
+```
+http://localhost:7676/
+```
+or
+```
+http://<your-server-ip>:7676/
+```
+
+---
+
+## 🐳 Additional Configuration
 
 **Volume explanations:**
 - `/var/run/docker.sock` - Required for Docker API access
@@ -206,6 +264,7 @@ Access the web interface at `http://localhost:7676/` (or your server IP) to conf
 | Problem | Solution |
 |---------|----------|
 | ❌ Can't access web interface | • Check if port 7676 is available and not blocked by firewall<br>• Verify container is running: `docker ps`<br>• Check logs: `docker logs prunemate` |
+| 🏗️ ARM architecture error | • Error: "no matching manifest for linux/arm64"<br>• **Solution:** Clone the repository and change `image: anoniemerd/prunemate:latest` to `build: .` in docker-compose.yaml<br>• This builds the image locally for your ARM64 system<br>• See Quick Start section for ARM64-specific instructions |
 | ⚙️ Container not starting | • View startup errors: `docker logs prunemate`<br>• Verify Docker socket is accessible<br>• Check if port 7676 is already in use |
 | 🔒 Permission denied errors | • Ensure `/var/run/docker.sock` exists and is accessible<br>• On Linux, Docker daemon must be running<br>• User running Docker must have proper permissions |
 | 🕐 Wrong timezone in logs/schedule | • Set `PRUNEMATE_TZ` environment variable correctly<br>• Restart container after changing: `docker-compose restart`<br>• Verify timezone in logs matches expected |
@@ -227,6 +286,12 @@ Access the web interface at `http://localhost:7676/` (or your server IP) to conf
 ---
 
 ## 📝 Changelog
+
+### Version 1.2.3 (November 2025)
+- 🏗️ Added ARM64 architecture installation instructions (Apple Silicon, ARM servers, Raspberry Pi)
+- 📝 All functions documented in English for better code maintainability
+- 📜 Changed license from MIT to AGPLv3
+- 📚 Improved documentation with Quick Start guide
 
 ### Version 1.2.2 (November 2025)
 - ✨ Added 12/24-hour time format support via `PRUNEMATE_TIME_24H` environment variable

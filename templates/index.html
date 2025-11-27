@@ -11,6 +11,7 @@
         href="{{ url_for('static', filename='prunemate-icon-embedded.svg') }}"/>
 
   <style>
+    /* CSS custom properties (theme colors and design tokens) */
     :root{
       --bg-900: #020617;
       --bg-800: #0b1120;
@@ -28,9 +29,12 @@
       --btn-elev: 0 10px 30px rgba(16,185,129,0.15);
     }
 
+    /* Global box-sizing reset */
     *{box-sizing:border-box}
 
+    /* Full-height layout setup */
     html,body{height:100%}
+    /* Main body styling with gradient background and flexbox centering */
     body {
       margin:0;
       font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -45,6 +49,7 @@
       padding:28px 16px;
     }
 
+    /* Main content container with glass morphism effect */
     .container{
       width:100%;
       max-width:820px;
@@ -58,6 +63,7 @@
       backdrop-filter: blur(6px) saturate(1.05);
     }
 
+    /* Glass effect overlay for container */
     .container::before{
       content:"";
       position:absolute;
@@ -68,6 +74,7 @@
       mix-blend-mode:overlay;
     }
 
+    /* Header layout and logo styling */
     .header{display:flex;align-items:center;gap:18px;margin-bottom:12px}
     .title-block{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;transform:translateY(4px)}
     .logo-wrap{width:88px;height:88px;border-radius:20px;flex-shrink:0}
@@ -76,6 +83,7 @@
     .wordmark{height:44px;max-width:360px}
     .title-block p{margin:6px 0 0 0;color:var(--muted);font-size:0.95rem}
 
+    /* Typography for headings and labels */
     h2{font-size:1.05rem;margin-top:1.4rem;margin-bottom:0.4rem;color:var(--text)}
     h3{font-size:0.95rem;margin:6px 0 8px 0;color:var(--muted);font-weight:600}
     label{font-size:0.95rem;color:var(--text)}
@@ -99,6 +107,7 @@
       border-color: rgba(14,165,233,0.6);
     }
 
+    /* Field layout within inline rows */
     .row.inline .field{
       min-width:160px;
       display:flex;
@@ -131,9 +140,11 @@
     input[type="number"]::-webkit-outer-spin-button{ -webkit-appearance: none; margin:0; }
     input[type="number"]{ -moz-appearance: textfield; appearance:textfield; }
 
+    /* Input and select field dimensions */
     select{width:100%; min-width:140px}
     input[type="time"], input[type="number"]{width:100%}
 
+    /* Card container styling with gradient background */
     .card{
       background: linear-gradient(160deg, rgba(12,18,32,0.92), rgba(10,14,24,0.86));
       border-radius:var(--radius-lg);
@@ -142,8 +153,10 @@
       box-shadow: 0 6px 26px rgba(3,6,14,0.5);
       margin-top:10px;
     }
+    /* Special styling for schedule card */
     .card.schedule{border-color:var(--accent-soft);box-shadow: 0 20px 60px rgba(8,15,28,0.6), 0 0 40px rgba(14,165,233,0.06)}
 
+    /* Row and field layout */
     .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:8px}
     .row.inline{align-items:center}
     .row .field{min-width:160px}
@@ -160,21 +173,30 @@
     .btn-secondary:hover{transform:translateY(-2px);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03));border-color:rgba(148,163,184,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.015),0 8px 24px rgba(2,6,23,0.6);}
     .btn-secondary:active{transform:translateY(1px);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03),0 2px 10px rgba(2,6,23,0.55);}
 
+    /* Small text styling for hints and footer */
     .hint{font-size:0.82rem;color:var(--muted);margin-top:6px}
     .footer{text-align:center;margin-top:18px;font-size:0.82rem;color:#9aa4b2}
 
     /* Toggle switches */
+    /* Toggle row container layout */
     .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
     .toggle-row span.label-text{font-size:0.95rem;color:var(--text)}
+    /* Switch container dimensions */
     .switch{position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0}
+    /* Hide native checkbox input */
     .switch input{opacity:0;width:0;height:0}
+    /* Slider track background */
     .slider{position:absolute;cursor:pointer;inset:0;background-color:#374151;border-radius:9999px;transition:.18s;border:1px solid rgba(0,0,0,0.25)}
     /* Slider knob: 4px horizontal margin for equal spacing */
     .slider:before{position:absolute;content:"";height:18px;width:18px;left:4px;bottom:4px;background-color:#fff;transition:.18s;border-radius:9999px;box-shadow:0 4px 12px rgba(2,6,23,0.55)}
+    /* Checked state styling with green gradient */
     .switch input:checked + .slider{background:linear-gradient(90deg,var(--accent-strong),#16a34a);box-shadow:0 0 12px rgba(34,197,94,0.14)}
+    /* Move slider knob when checked */
     .switch input:checked + .slider:before{transform:translateX(22px)}
+    /* Disabled state styling */
     .switch input:disabled + .slider{opacity:0.4;cursor:default;box-shadow:none}
 
+    /* Toast notification styling (fixed position with animation) */
     .toast {
       position:fixed;
       left:50%;
@@ -196,12 +218,14 @@
       max-width:calc(100% - 48px);
       text-align:center;
     }
+    /* Toast visible state */
     .toast.show {
       opacity:1;
       transform:translateX(-50%) translateY(0);
       pointer-events:auto;
     }
 
+    /* Toast close button */
     .toast .close {
       margin-left:12px;
       background:transparent;
@@ -213,6 +237,7 @@
     }
 
 
+    /* Mobile responsive styles for smaller screens */
     @media (max-width: 640px){
       .container{padding:18px;border-radius:18px}
       .row.inline{flex-direction:column;align-items:flex-start;gap:10px}
@@ -221,7 +246,9 @@
       .wordmark{height:36px}
     }
 
+    /* Utility classes */
     .muted{color:var(--muted)}
+    /* Screen reader only text (accessible but invisible) */
     .visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
     /* Collapsible notification panel */
     #notif-card #notif-panel{transition:max-height .32s cubic-bezier(.25,.8,.25,1);}
@@ -233,18 +260,23 @@
   </style>
 </head>
 <body>
+  <!-- Retrieve flash messages from Flask session -->
   {% set _flashes = get_flashed_messages(with_categories=false) %}
+  <!-- Toast notification for flash messages -->
   <div id="toast" class="toast" data-message="{% if _flashes %}{{ _flashes[0] | e }}{% endif %}">
     <span id="toast-text"></span>
     <button id="toast-close" class="close" aria-label="Close">&times;</button>
   </div>
 
+  <!-- Main application container -->
   <div class="container">
+    <!-- Header with logo and title -->
     <div class="header">
       <div class="logo-wrap">
         <img src="{{ url_for('static', filename='prunemate.png') }}"
              alt="prunemate logo" />
       </div>
+      <!-- Title block with SVG wordmark -->
       <div class="title-block">
         <h1 class="visually-hidden">PruneMate</h1>
         <svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 48" role="img" aria-label="PruneMate">
@@ -264,10 +296,13 @@
        </div>
     </div>
 
+    <!-- Main configuration form -->
     <form method="post" action="{{ url_for('update') }}">
+      <!-- Schedule configuration section -->
       <h2>Schedule</h2>
       <div class="card schedule">
         <div class="row inline">
+          <!-- Frequency selector (daily/weekly/monthly) -->
           <div class="field">
             <label for="frequency">Frequency</label><br/>
             <select id="frequency" name="frequency" aria-label="Frequency">
@@ -277,9 +312,11 @@
             </select>
           </div>
 
+          <!-- Time picker (24h or 12h format based on config) -->
           <div class="field">
             <label for="time">Time</label><br />
             {% if use_24h %}
+            <!-- Native 24-hour time picker -->
             <input
               type="time"
               id="time"
@@ -318,6 +355,7 @@
             {% endif %}
           </div>
 
+          <!-- Day of week selector (shown for weekly frequency) -->
           <div id="week-row" class="field" style="display:none;">
             <label for="day_of_week">Day of the week</label><br/>
             <select id="day_of_week" name="day_of_week">
@@ -336,6 +374,7 @@
             </select>
           </div>
 
+          <!-- Day of month selector (shown for monthly frequency) -->
           <div id="month-row" class="field" style="display:none;">
             <label for="day_of_month">Day of the month</label><br/>
             <input
@@ -347,15 +386,19 @@
               value="{{ config.day_of_month or 1 }}"
             />
           </div>
+          <!-- Placeholder for grid alignment when daily is selected -->
           <div id="schedule-placeholder" class="field" style="display:none;"></div>
         </div>
+       <!-- Timezone and time format information -->
        <p class="hint" style="margin-top:8px;">
          Using Timezone: {{ timezone }} · Time format: {{ '24-hour' if use_24h else '12-hour (AM/PM)' }}<br>
        </p>
       </div>
 
+      <!-- Cleanup options section -->
       <h2>Cleanup options</h2>
       <div class="card">
+        <!-- Toggle for pruning unused containers -->
         <div class="toggle-row">
           <span class="label-text">All unused containers</span>
           <label class="switch">
@@ -365,6 +408,7 @@
           </label>
         </div>
 
+        <!-- Toggle for pruning unused images -->
         <div class="toggle-row">
           <span class="label-text">All unused images</span>
           <label class="switch">
@@ -374,6 +418,7 @@
           </label>
         </div>
 
+        <!-- Toggle for pruning unused networks -->
         <div class="toggle-row">
           <span class="label-text">All unused networks</span>
           <label class="switch">
@@ -383,6 +428,7 @@
           </label>
         </div>
 
+        <!-- Toggle for pruning unused volumes -->
         <div class="toggle-row">
           <span class="label-text">All unused volumes</span>
           <label class="switch">
@@ -393,11 +439,15 @@
         </div>
       </div>
 
+      <!-- Notifications configuration section -->
       <h2>Notifications</h2>
+      <!-- Collapsible notification settings card -->
       <div class="card collapsed" id="notif-card">
+        <!-- Collapsible header button -->
         <button type="button" id="notif-header" aria-expanded="false" aria-controls="notif-panel"
           style="all:unset;display:flex;width:100%;cursor:pointer;align-items:center;justify-content:space-between;padding:4px 0 8px 0;">
           <div style="display:flex;align-items:center;gap:10px;">
+            <!-- Notification bell icon -->
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
               <path d="M15 17H9a3 3 0 0 0 6 0z" fill="#9ca3af"></path>
               <path d="M12 3a5 5 0 0 0-5 5v2.2a5 5 0 0 1-.9 2.8L5 15h14l-1.1-1.0a5 5 0 0 1-.9-2.8V8a5 5 0 0 0-5-5z" fill="#9ca3af"></path>
@@ -410,8 +460,10 @@
           <span id="notif-arrow" style="font-size:1.05rem;transition:.2s;">▼</span>
         </button>
 
+        <!-- Collapsible notification settings panel -->
         <div id="notif-panel" style="overflow:hidden;">
           <div class="row inline" style="margin-top:4px;">
+            <!-- Notification provider selector -->
             <div class="field">
               <label for="notifications_provider">Provider</label><br/>
               <select id="notifications_provider" name="notifications_provider" aria-label="Notification provider">
@@ -488,6 +540,7 @@
             </div>
           </div>
 
+          <!-- Test notification button -->
           <div style="margin-top:12px;">
             <button type="submit"
                     class="btn btn-secondary"
@@ -499,6 +552,7 @@
         </div>
       </div>
 
+      <!-- Save and schedule button -->
       <div style="margin-top: 16px;">
         <button type="submit" class="btn btn-primary">
           Save &amp; Schedule
@@ -506,14 +560,16 @@
       </div>
     </form>
 
+    <!-- Manual prune trigger form -->
     <form method="post" action="{{ url_for('run_now') }}" style="margin-top: 10px;">
       <button type="submit" class="btn btn-secondary">
         Run now
       </button>
     </form>
 
+    <!-- Application footer -->
     <div class="footer">
-      PruneMate · 2025 · V1.2.2 ·
+      PruneMate · 2025 · V1.2.3 ·
       <a href="https://github.com/anoniemerd/PruneMate" target="_blank">GitHub</a>
     </div>
   </div>
@@ -545,6 +601,7 @@
     function initDayOfMonthClamp(){
       const domInput = document.getElementById('day_of_month');
       if (!domInput) return;
+      // Validate and clamp day value
       const clamp = () => {
         const v = domInput.value.trim();
         if (v === '') return;
@@ -554,6 +611,7 @@
         if (n > 31) n = 31;
         if (String(n) !== domInput.value) domInput.value = n;
       };
+      // Live validation while typing
       domInput.addEventListener('input', () => {
         const v = domInput.value;
         const n = parseInt(v, 10);
@@ -561,6 +619,7 @@
           domInput.value = Math.max(1, Math.min(31, n));
         }
       });
+      // Final validation when input loses focus
       domInput.addEventListener('blur', clamp);
       clamp();
     }
@@ -583,6 +642,7 @@
         if (n > 12) n = 12;
         hourInput.value = n;
       };
+      // Limit hour input length and validate range while typing
       hourInput.addEventListener('input', () => {
         let v = hourInput.value;
         if (v.length > 2) {
@@ -594,6 +654,7 @@
           hourInput.value = Math.max(1, Math.min(12, n));
         }
       });
+      // Final hour validation when input loses focus
       hourInput.addEventListener('blur', clampHour);
       
       // Minute: 0-59, max 2 digits
@@ -608,6 +669,7 @@
         if (n > 59) n = 59;
         minuteInput.value = String(n).padStart(2, '0');
       };
+      // Limit minute input length and validate range while typing
       minuteInput.addEventListener('input', () => {
         let v = minuteInput.value;
         if (v.length > 2) {
@@ -619,6 +681,7 @@
           minuteInput.value = String(Math.max(0, Math.min(59, n))).padStart(2, '0');
         }
       });
+      // Final minute validation when input loses focus
       minuteInput.addEventListener('blur', clampMinute);
     }
 
@@ -631,24 +694,27 @@
         const textEl = document.getElementById('toast-text');
         const closeBtn = document.getElementById('toast-close');
 
+        // Exit early if no message to display
         if (!msg) {
           toast.classList.remove('show');
           return;
         }
 
+        // Display toast with animation
         textEl.textContent = msg;
         requestAnimationFrame(() => toast.classList.add('show'));
 
-        // Auto-hide after 5 seconds
+        // Auto-hide after 5 seconds & Hide toast notification
         const hide = () => toast.classList.remove('show');
         const timer = setTimeout(hide, 5000);
 
+        // Manual close button handler
         closeBtn.addEventListener('click', () => {
           clearTimeout(timer);
           hide();
         });
 
-        // Hide on Escape key
+        // Close toast when Escape key is pressed
         document.addEventListener('keydown', (e) => {
           if (e.key === 'Escape') {
             clearTimeout(timer);
@@ -667,6 +733,7 @@
       const ntfyBlock = document.getElementById('ntfy-fields');
       const toggleWrapper = document.getElementById('only-on-changes-wrapper');
       if(!gotifyBlock || !ntfyBlock || !toggleWrapper) return;
+      // Show Gotify fields and position toggle
       if(prov === 'gotify'){
         gotifyBlock.style.display = 'block';
         ntfyBlock.style.display = 'none';
@@ -675,6 +742,7 @@
         } else {
           gotifyBlock.appendChild(toggleWrapper);
         }
+      // Show ntfy fields and position toggle
       } else {
         gotifyBlock.style.display = 'none';
         ntfyBlock.style.display = 'block';
@@ -693,6 +761,7 @@
       const notifPanel = document.getElementById('notif-panel');
       const notifArrow = document.getElementById('notif-arrow');
       if(!notifCard || !notifHeader || !notifPanel) return;
+      // Toggle notification panel open/closed
       function setNotif(open){
         if(open){
           notifCard.classList.remove('collapsed');
@@ -704,8 +773,10 @@
           notifHeader.setAttribute('aria-expanded','false');
         }
       }
+      // Start with panel collapsed
       setNotif(false);
       notifHeader.addEventListener('click', () => {
+        // Toggle panel state on click
         const isOpen = notifHeader.getAttribute('aria-expanded') === 'true';
         setNotif(!isOpen);
       });
@@ -713,32 +784,37 @@
 
     // Initialize all components after DOM ready
     document.addEventListener('DOMContentLoaded', function(){
+      // Set initial schedule display based on frequency
       updateScheduleVisibility();
       document.getElementById('frequency').addEventListener('change', updateScheduleVisibility);
+      // Initialize input field validation
       initDayOfMonthClamp();
       initTimeClamp();
+      // Setup notification provider switching
       const provEl = document.getElementById('notifications_provider');
       if(provEl){
         provEl.addEventListener('change', updateNotifUI);
         updateNotifUI();
       }
+      // Setup collapsible notification panel
       initNotificationCollapse();
       
       {% if not use_24h %}
-      // Initialize 12-hour time picker with current value
+      // Setup 12-hour time picker with AM/PM
       const timeHidden = document.getElementById('time');
       const timeHour = document.getElementById('time-hour');
       const timeMinute = document.getElementById('time-minute');
       const timePeriod = document.getElementById('time-period');
       
       if(timeHidden && timeHour && timeMinute && timePeriod){
-        // Parse initial 24h time and set 12h fields
+        // Convert 24h time to 12h format for display
         function init12hTime(){
           const time24 = timeHidden.value;
           const [h24Str, min] = time24.split(':');
           const h24 = parseInt(h24Str);
           let h12, period;
           
+          // Convert 24-hour to 12-hour format with AM/PM
           if(h24 === 0){
             h12 = 12;
             period = 'AM';
@@ -753,25 +829,27 @@
             period = 'PM';
           }
           
+          // Update display fields with converted values
           timeHour.value = h12;
           timeMinute.value = parseInt(min);
           timePeriod.value = period;
         }
         
-        // Convert 12h to 24h and update hidden field
+        // Convert 12h format to 24h and update hidden field
         function update24hTime(){
           let h12 = parseInt(timeHour.value) || 0;
           let min = parseInt(timeMinute.value) || 0;
           const period = timePeriod.value;
           
-          // Clamp values
+          // Ensure values are within valid ranges
           h12 = Math.max(1, Math.min(12, h12));
           min = Math.max(0, Math.min(59, min));
           
-          // Update inputs with clamped values
+          // Update display fields with clamped values
           timeHour.value = h12;
           timeMinute.value = min;
           
+          // Convert 12-hour format back to 24-hour
           let h24;
           if(period === 'AM'){
             h24 = h12 === 12 ? 0 : h12;
@@ -779,9 +857,11 @@
             h24 = h12 === 12 ? 12 : h12 + 12;
           }
           
+          // Store 24-hour format in hidden field for form submission
           timeHidden.value = String(h24).padStart(2, '0') + ':' + String(min).padStart(2, '0');
         }
         
+        // Load initial 24h time and convert to 12h display
         init12hTime();
         
         // Update hidden field when 12h fields change
