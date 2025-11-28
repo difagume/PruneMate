@@ -296,6 +296,68 @@
        </div>
     </div>
 
+    <!-- All-Time Statistics Card -->
+    <h2 style="margin-top:1.6rem;font-size:0.95rem;">All-Time Statistics</h2>
+    <div class="card" id="stats-card" style="border-color:var(--accent-soft);box-shadow: 0 20px 60px rgba(8,15,28,0.6), 0 0 40px rgba(34,197,94,0.06);padding:18px;">
+      <div id="stats-loading" style="text-align:center;color:var(--muted);padding:8px;font-size:0.9rem;">
+        Loading statistics...
+      </div>
+      <div id="stats-content" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+          <!-- Total Space Reclaimed -->
+          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(34,197,94,0.06),rgba(14,165,233,0.04));border-radius:10px;border:1px solid rgba(34,197,94,0.1);">
+            <div style="font-size:1.5rem;font-weight:700;color:var(--accent-strong);font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-space">0 B</div>
+            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Total Reclaimed</div>
+          </div>
+          
+          <!-- Prune Runs -->
+          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(99,102,241,0.04));border-radius:10px;border:1px solid rgba(14,165,233,0.1);">
+            <div style="font-size:1.5rem;font-weight:700;color:var(--accent);font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-runs">0</div>
+            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Prune Runs</div>
+          </div>
+          
+          <!-- Containers Deleted -->
+          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(236,72,153,0.04));border-radius:10px;border:1px solid rgba(168,85,247,0.1);">
+            <div style="font-size:1.5rem;font-weight:700;color:#c084fc;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-containers">0</div>
+            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Containers</div>
+          </div>
+          
+          <!-- Images Deleted -->
+          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(14,165,233,0.04));border-radius:10px;border:1px solid rgba(59,130,246,0.1);">
+            <div style="font-size:1.5rem;font-weight:700;color:#60a5fa;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-images">0</div>
+            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Images</div>
+          </div>
+          
+          <!-- Networks Deleted -->
+          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(251,191,36,0.06),rgba(245,158,11,0.04));border-radius:10px;border:1px solid rgba(251,191,36,0.1);">
+            <div style="font-size:1.5rem;font-weight:700;color:#fbbf24;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-networks">0</div>
+            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Networks</div>
+          </div>
+          
+          <!-- Volumes Deleted -->
+          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(239,68,68,0.06),rgba(220,38,38,0.04));border-radius:10px;border:1px solid rgba(239,68,68,0.1);">
+            <div style="font-size:1.5rem;font-weight:700;color:#f87171;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-volumes">0</div>
+            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Volumes</div>
+          </div>
+        </div>
+        
+        <!-- First and Last Run Dates -->
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--card-border);display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;">
+          <div style="text-align:center;">
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:3px;">First Run</div>
+            <div style="font-size:0.85rem;color:var(--text);font-weight:600;" id="stats-first">-</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:3px;">Last Run</div>
+            <div style="font-size:0.85rem;color:var(--text);font-weight:600;" id="stats-last">-</div>
+          </div>
+        </div>
+      </div>
+      <div id="stats-error" style="display:none;text-align:center;color:#f87171;padding:8px;font-size:0.9rem;">
+        Failed to load statistics
+      </div>
+    </div>
+
     <!-- Main configuration form -->
     <form method="post" action="{{ url_for('update') }}">
       <!-- Schedule configuration section -->
@@ -561,7 +623,7 @@
     </form>
 
     <!-- Manual prune trigger form -->
-    <form method="post" action="{{ url_for('run_now') }}" style="margin-top: 10px;">
+    <form method="post" action="{{ url_for('run_now') }}" style="margin-top: 10px;" onsubmit="setTimeout(loadStats, 1000);">
       <button type="submit" class="btn btn-secondary">
         Run now
       </button>
@@ -569,7 +631,7 @@
 
     <!-- Application footer -->
     <div class="footer">
-      PruneMate · 2025 · V1.2.3 ·
+      PruneMate · 2025 · V1.2.4 ·
       <a href="https://github.com/anoniemerd/PruneMate" target="_blank">GitHub</a>
     </div>
   </div>
@@ -683,6 +745,10 @@
       });
       // Final minute validation when input loses focus
       minuteInput.addEventListener('blur', clampMinute);
+      
+      // Initialize values on load
+      clampHour();
+      clampMinute();
     }
 
     // Display and auto-hide flash message toast
@@ -782,6 +848,84 @@
       });
     }
 
+    // Load and display all-time statistics
+    function loadStats(){
+      const loading = document.getElementById('stats-loading');
+      const content = document.getElementById('stats-content');
+      const error = document.getElementById('stats-error');
+      
+      fetch('/stats')
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to fetch stats');
+          return response.json();
+        })
+        .then(data => {
+          // Hide loading, show content
+          loading.style.display = 'none';
+          content.style.display = 'block';
+          error.style.display = 'none';
+          
+          // Helper to format bytes to human-readable format
+          function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let num = bytes;
+            let unitIndex = 0;
+            while (num >= 1024 && unitIndex < units.length - 1) {
+              num /= 1024;
+              unitIndex++;
+            }
+            return num.toFixed(1) + ' ' + units[unitIndex];
+          }
+          
+          // Helper to format date
+          function formatDate(isoString) {
+            if (!isoString) return '-';
+            try {
+              const date = new Date(isoString);
+              if (isNaN(date.getTime())) return '-';
+              
+              // Format: DD-MM-YYYY HH:MM (24h) or DD-MM-YYYY h:MM AM/PM (12h)
+              const day = String(date.getDate()).padStart(2, '0');
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const year = date.getFullYear();
+              
+              {% if use_24h %}
+              // 24-hour format
+              const hours = String(date.getHours()).padStart(2, '0');
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              return `${day}-${month}-${year} ${hours}:${minutes}`;
+              {% else %}
+              // 12-hour format with AM/PM
+              let hours = date.getHours();
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              const period = hours >= 12 ? 'PM' : 'AM';
+              hours = hours % 12 || 12;
+              return `${day}-${month}-${year} ${hours}:${minutes} ${period}`;
+              {% endif %}
+            } catch (e) {
+              return '-';
+            }
+          }
+          
+          // Update all stat displays
+          document.getElementById('stats-space').textContent = formatBytes(data.total_space_reclaimed || 0);
+          document.getElementById('stats-runs').textContent = data.prune_runs || 0;
+          document.getElementById('stats-containers').textContent = data.containers_deleted || 0;
+          document.getElementById('stats-images').textContent = data.images_deleted || 0;
+          document.getElementById('stats-networks').textContent = data.networks_deleted || 0;
+          document.getElementById('stats-volumes').textContent = data.volumes_deleted || 0;
+          document.getElementById('stats-first').textContent = formatDate(data.first_run);
+          document.getElementById('stats-last').textContent = formatDate(data.last_run);
+        })
+        .catch(err => {
+          console.error('Error loading stats:', err);
+          loading.style.display = 'none';
+          content.style.display = 'none';
+          error.style.display = 'block';
+        });
+    }
+
     // Initialize all components after DOM ready
     document.addEventListener('DOMContentLoaded', function(){
       // Set initial schedule display based on frequency
@@ -789,7 +933,9 @@
       document.getElementById('frequency').addEventListener('change', updateScheduleVisibility);
       // Initialize input field validation
       initDayOfMonthClamp();
+      {% if not use_24h %}
       initTimeClamp();
+      {% endif %}
       // Setup notification provider switching
       const provEl = document.getElementById('notifications_provider');
       if(provEl){
@@ -798,6 +944,9 @@
       }
       // Setup collapsible notification panel
       initNotificationCollapse();
+      
+      // Load all-time statistics
+      loadStats();
       
       {% if not use_24h %}
       // Setup 12-hour time picker with AM/PM
@@ -831,7 +980,7 @@
           
           // Update display fields with converted values
           timeHour.value = h12;
-          timeMinute.value = parseInt(min);
+          timeMinute.value = String(parseInt(min)).padStart(2, '0');
           timePeriod.value = period;
         }
         
@@ -847,7 +996,7 @@
           
           // Update display fields with clamped values
           timeHour.value = h12;
-          timeMinute.value = min;
+          timeMinute.value = String(min).padStart(2, '0');
           
           // Convert 12-hour format back to 24-hour
           let h24;

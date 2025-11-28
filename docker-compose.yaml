@@ -9,6 +9,6 @@ services:
       - ./logs:/var/log
       - ./config:/config
     environment:
-      - PRUNEMATE_TZ=Europe/Amsterdam
-      - PRUNEMATE_TIME_24H=true
+      - PRUNEMATE_TZ=Europe/Amsterdam # Change this to your desired timezone
+      - PRUNEMATE_TIME_24H=true #false for 12-Hour format (AM/PM)
     restart: unless-stopped

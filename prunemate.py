@@ -7,7 +7,7 @@ import urllib.request
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from filelock import FileLock, Timeout
 from gunicorn.app.base import BaseApplication
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -31,6 +31,8 @@ LOCK_FILE = Path(os.environ.get("PRUNEMATE_LOCK", "/config/prunemate.lock"))
 # File to persist the last run key so multiple workers don't double-trigger
 LAST_RUN_FILE = Path(os.environ.get("PRUNEMATE_LAST_RUN", "/config/last_run_key"))
 LAST_RUN_LOCK = Path(str(LAST_RUN_FILE) + ".lock")
+# File to persist all-time statistics
+STATS_FILE = Path(os.environ.get("PRUNEMATE_STATS", "/config/stats.json"))
 
 DEFAULT_CONFIG = {
     "frequency": "daily",
@@ -58,7 +60,7 @@ last_run_key = {"value": None}
 
 
 def configure_logging():
-    # Configure logging with console and rotating file handlers
+    """Configure logging with console and rotating file handlers."""
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     ch = logging.StreamHandler()
@@ -108,14 +110,14 @@ scheduler.start()
 
 
 def log(message: str):
-    # Log a message with a timezone-aware timestamp
+    """Log a message with a timezone-aware timestamp."""
     now = datetime.datetime.now(app_timezone)
     timestamp = now.isoformat(timespec="seconds")
     logging.info("[%s] %s", timestamp, message)
 
 
 def _redact_for_log(obj):
-    # Return a deep-copied structure with secrets redacted for safe logging
+    """Return a deep-copied structure with secrets redacted for safe logging."""
     if isinstance(obj, dict):
         redacted = {}
         for k, v in obj.items():
@@ -131,7 +133,7 @@ def _redact_for_log(obj):
 
 # ---- Cross-process last-run tracking (prevents duplicate scheduled triggers) ----
 def _read_last_run_key() -> str | None:
-    # Read the last run key from disk in a thread-safe manner
+    """Read the last run key from disk in a thread-safe manner."""
     try:
         # Use a short lock to avoid concurrent reads/writes across workers
         with FileLock(str(LAST_RUN_LOCK)):
@@ -144,7 +146,7 @@ def _read_last_run_key() -> str | None:
 
 
 def _write_last_run_key(key: str) -> None:
-    # Write the last run key to disk atomically
+    """Write the last run key to disk atomically."""
     try:
         with FileLock(str(LAST_RUN_LOCK)):
             parent = LAST_RUN_FILE.parent
@@ -162,7 +164,7 @@ def _write_last_run_key(key: str) -> None:
 
 
 def _clear_last_run_key() -> None:
-    # Clear the last run key from memory and disk
+    """Clear the last run key from memory and disk."""
     last_run_key["value"] = None
     try:
         with FileLock(str(LAST_RUN_LOCK)):
@@ -172,8 +174,82 @@ def _clear_last_run_key() -> None:
         pass
 
 
+# ---- All-time statistics tracking ----
+def load_stats() -> dict:
+    """Load cumulative statistics from disk."""
+    try:
+        if STATS_FILE.exists():
+            with open(STATS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        log(f"Error loading stats from {STATS_FILE}: {e}")
+    
+    # Return default stats structure
+    return {
+        "total_space_reclaimed": 0,
+        "containers_deleted": 0,
+        "images_deleted": 0,
+        "networks_deleted": 0,
+        "volumes_deleted": 0,
+        "prune_runs": 0,
+        "first_run": None,
+        "last_run": None,
+    }
+
+
+def save_stats(stats: dict) -> None:
+    """Atomically save statistics to disk."""
+    try:
+        parent = STATS_FILE.parent
+        parent.mkdir(parents=True, exist_ok=True)
+        
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile("w", delete=False, dir=str(parent), encoding="utf-8") as tmp:
+                json.dump(stats, tmp, indent=2)
+                tmp.flush()
+                os.fsync(tmp.fileno())
+                tmp_path = Path(tmp.name)
+            
+            try:
+                tmp_path.chmod(0o600)
+            except Exception:
+                pass
+            
+            tmp_path.replace(STATS_FILE)
+            log(f"Statistics saved to {STATS_FILE}")
+        except Exception:
+            if tmp_path and tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except Exception:
+                    pass
+            raise
+    except Exception as e:
+        log(f"Error saving statistics: {e}")
+
+
+def update_stats(containers: int, images: int, networks: int, volumes: int, space: int) -> None:
+    """Update cumulative statistics after a prune run."""
+    stats = load_stats()
+    
+    stats["containers_deleted"] += containers
+    stats["images_deleted"] += images
+    stats["networks_deleted"] += networks
+    stats["volumes_deleted"] += volumes
+    stats["total_space_reclaimed"] += space
+    stats["prune_runs"] += 1
+    
+    now = datetime.datetime.now(app_timezone).isoformat()
+    if stats["first_run"] is None:
+        stats["first_run"] = now
+    stats["last_run"] = now
+    
+    save_stats(stats)
+
+
 def human_bytes(num: int) -> str:
-    # Convert bytes to human-readable format (B, KB, MB, GB, TB, PB)
+    """Convert bytes to human-readable format (B, KB, MB, GB, TB, PB)."""
     n = float(num)
     for unit in ["B", "KB", "MB", "GB", "TB"]:
         if n < 1024.0:
@@ -183,7 +259,7 @@ def human_bytes(num: int) -> str:
 
 
 def format_time(time_str: str) -> str:
-    # Format time string according to user preference (12h or 24h)
+    """Format time string according to user preference (12h or 24h)."""
     if use_24h_format:
         return time_str
     # Convert 24h to 12h format
@@ -205,7 +281,7 @@ def format_time(time_str: str) -> str:
 
 
 def describe_schedule() -> str:
-    # Generate a human-readable description of the current schedule
+    """Generate a human-readable description of the current schedule."""
     freq = config.get("frequency", "daily")
     time_str = config.get("time", "03:00")
     formatted_time = format_time(time_str)
@@ -225,7 +301,7 @@ def describe_schedule() -> str:
 
 
 def effective_config():
-    # Return the current effective configuration with relevant fields
+    """Return the current effective configuration with relevant fields."""
     freq = config.get("frequency", "daily")
     base = {
         "frequency": freq,
@@ -244,7 +320,7 @@ def effective_config():
 
 
 def load_config(silent=False):
-    # Load configuration from disk. Set silent=True to suppress logging
+    """Load configuration from disk. Set silent=True to suppress logging."""
     global config
     with config_lock:
         try:
@@ -283,7 +359,7 @@ def load_config(silent=False):
 
 
 def save_config():
-    # Atomic save with fsync and restricted permissions (best-effort)
+    """Atomic save with fsync and restricted permissions (best-effort)."""
     with config_lock:
         try:
             path = Path(CONFIG_PATH)
@@ -317,7 +393,7 @@ def save_config():
 
 
 def _send_gotify(cfg: dict, title: str, message: str, priority: int = 5) -> bool:
-    # Send a notification via Gotify
+    """Send a notification via Gotify."""
     if not cfg.get("enabled"):
         log("Gotify disabled; skipping notification.")
         return False
@@ -339,7 +415,7 @@ def _send_gotify(cfg: dict, title: str, message: str, priority: int = 5) -> bool
 
 
 def _send_ntfy(cfg: dict, title: str, message: str, priority: int = 5) -> bool:
-    # Send a notification via ntfy
+    """Send a notification via ntfy."""
     if not cfg.get("enabled"):
         log("ntfy disabled; skipping notification.")
         return False
@@ -362,7 +438,7 @@ def _send_ntfy(cfg: dict, title: str, message: str, priority: int = 5) -> bool:
 
 
 def send_notification(title: str, message: str, priority: int = 5) -> bool:
-    # Send a notification using the configured provider (gotify or ntfy)
+    """Send a notification using the configured provider (gotify or ntfy)."""
     notcfg = config.get("notifications", DEFAULT_CONFIG["notifications"])
     provider = (notcfg.get("provider") or "gotify").lower()
     if provider == "gotify":
@@ -374,7 +450,7 @@ def send_notification(title: str, message: str, priority: int = 5) -> bool:
 
 
 def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
-    # Execute Docker pruning based on current configuration
+    """Execute Docker pruning based on current configuration."""
     # Ensure we have the latest config before running prune job
     load_config(silent=True)
     
@@ -480,7 +556,16 @@ def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
             volumes_deleted, total_space_reclaimed > 0
         ])
 
-        # Respect only_on_changes
+        # Update all-time statistics (always, even if nothing was pruned)
+        update_stats(
+            containers=containers_deleted,
+            images=images_deleted,
+            networks=networks_deleted,
+            volumes=volumes_deleted,
+            space=total_space_reclaimed
+        )
+
+        # Respect only_on_changes for notifications
         if not anything_deleted and config.get("notifications", {}).get("only_on_changes", True):
             log("Nothing was pruned; skipping notification.")
             return True
@@ -501,6 +586,7 @@ def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
 
         message = "\n".join(summary_lines)
         send_notification("PruneMate run completed", message)
+        
         return True
     
     finally:
@@ -517,9 +603,11 @@ def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
 
 
 def compute_run_key(now: datetime.datetime) -> str:
-    # Generate a unique key for the current scheduled run
-    # Includes the configured time so changing the schedule time allows a new run
-    # on the same day/week/month
+    """Generate a unique key for the current scheduled run.
+    
+    Includes the configured time so changing the schedule time allows a new run
+    on the same day/week/month.
+    """
     freq = config.get("frequency", "daily")
     time_str = config.get("time", "03:00")
     date_str = now.date().isoformat()
@@ -535,10 +623,12 @@ def compute_run_key(now: datetime.datetime) -> str:
 
 
 def check_and_run_scheduled_job():
-    # Check if current time matches the configured schedule and trigger prune
-    # Uses a file-based "last run key" so the same period is not executed twice
-    # across multiple processes. If another worker already ran the job for the
-    # current key, this instance will skip
+    """Check if current time matches the configured schedule and trigger prune.
+    
+    Uses a file-based 'last run key' so the same period is not executed twice
+    across multiple processes. If another worker already ran the job for the
+    current key, this instance will skip.
+    """
     # Always reload config to ensure we have the latest schedule across workers
     load_config(silent=True)
     
@@ -597,14 +687,14 @@ def check_and_run_scheduled_job():
 
 
 def heartbeat():
-    # Periodic heartbeat function that checks for scheduled jobs
+    """Periodic heartbeat function that checks for scheduled jobs."""
     log("Heartbeat: scheduler is alive.")
     check_and_run_scheduled_job()
 
 
 @app.route("/")
 def index():
-    # Render the main configuration page
+    """Render the main configuration page."""
     # Reload config to ensure we show the latest settings across workers
     load_config(silent=True)
     return render_template("index.html", config=config, timezone=tz_name, config_path=CONFIG_PATH, use_24h=use_24h_format)
@@ -612,13 +702,33 @@ def index():
 
 @app.route("/update", methods=["POST"])
 def update():
-    # Handle configuration updates from the web form
+    """Handle configuration updates from the web form."""
     # Reload config to get the latest state before applying changes
     load_config(silent=True)
     old_config = json.loads(json.dumps(config))
 
     frequency = request.form.get("frequency", "daily")
-    time_value = request.form.get("time", "03:00")
+    
+    # Handle both 24h and 12h time formats
+    if use_24h_format:
+        time_value = request.form.get("time", "03:00")
+    else:
+        # Convert 12h format (hour, minute, period) to 24h format
+        try:
+            hour_12 = int(request.form.get("time_hour", "3"))
+            minute = int(request.form.get("time_minute", "0"))
+            period = request.form.get("time_period", "AM")
+            
+            # Convert to 24h
+            if period == "AM":
+                hour_24 = 0 if hour_12 == 12 else hour_12
+            else:  # PM
+                hour_24 = 12 if hour_12 == 12 else hour_12 + 12
+            
+            time_value = f"{hour_24:02d}:{minute:02d}"
+        except Exception:
+            time_value = "03:00"
+    
     day_of_week = request.form.get("day_of_week", "mon")
     raw_dom = request.form.get("day_of_month", "1")
     # Sanitize day-of-month (1..31)
@@ -696,7 +806,7 @@ def update():
 
 @app.route("/run-now", methods=["POST"])
 def run_now():
-    # Trigger an immediate manual prune job
+    """Trigger an immediate manual prune job."""
     # Reload config to use the latest prune settings
     load_config(silent=True)
     log("Manual run trigger received.")
@@ -707,13 +817,33 @@ def run_now():
 
 @app.route("/test-notification", methods=["POST"])
 def test_notification():
-    # Save configuration and send a test notification
+    """Save configuration and send a test notification."""
     # First save the config with the current form data, then test notification
     load_config(silent=True)
     old_config = json.loads(json.dumps(config))
 
     frequency = request.form.get("frequency", "daily")
-    time_value = request.form.get("time", "03:00")
+    
+    # Handle both 24h and 12h time formats
+    if use_24h_format:
+        time_value = request.form.get("time", "03:00")
+    else:
+        # Convert 12h format (hour, minute, period) to 24h format
+        try:
+            hour_12 = int(request.form.get("time_hour", "3"))
+            minute = int(request.form.get("time_minute", "0"))
+            period = request.form.get("time_period", "AM")
+            
+            # Convert to 24h
+            if period == "AM":
+                hour_24 = 0 if hour_12 == 12 else hour_12
+            else:  # PM
+                hour_24 = 12 if hour_12 == 12 else hour_12 + 12
+            
+            time_value = f"{hour_24:02d}:{minute:02d}"
+        except Exception:
+            time_value = "03:00"
+    
     day_of_week = request.form.get("day_of_week", "mon")
     raw_dom = request.form.get("day_of_month", "1")
     try:
@@ -783,7 +913,7 @@ def test_notification():
 
     save_config()
     
-    # Now test the notification with the saved config
+    # Test the notification with the saved config
     log("Notification test requested from UI.")
     ok = send_notification(
         "PruneMate test notification",
@@ -794,22 +924,29 @@ def test_notification():
     return redirect(url_for("index"))
 
 
+@app.route("/stats")
+def stats():
+    """Return all-time statistics as JSON."""
+    return jsonify(load_stats())
+
+
 class StandaloneApplication(BaseApplication):
-    # Custom Gunicorn application for running Flask with specific options
+    """Custom Gunicorn application for running Flask with specific options."""
+    
     def __init__(self, app, options=None):
-        # Initialize the application with Flask app and options
+        """Initialize the application with Flask app and options."""
         self.options = options or {}
         self.application = app
         super().__init__()
 
     def load_config(self):
-        # Load Gunicorn configuration from options dict
+        """Load Gunicorn configuration from options dict."""
         for key, value in self.options.items():
             if key in self.cfg.settings and value is not None:
                 self.cfg.set(key.lower(), value)
 
     def load(self):
-        # Return the Flask application instance
+        """Return the Flask application instance."""
         return self.application
 
 
@@ -823,7 +960,7 @@ if __name__ == "__main__":
         "workers": 1,
         "threads": 2,
         "timeout": 120,
-        # Disable access logs (those 172.x request lines)
+        # Disable access logs (172.x request lines)
         "accesslog": None,
         "errorlog": "-",
         "loglevel": "info",

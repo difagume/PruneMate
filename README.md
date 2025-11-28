@@ -8,7 +8,7 @@
 <p align="center"><em>Docker image & resource cleanup helper, on a schedule!</em></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.3-blue?style=flat-square"/>
+  <img src="https://img.shields.io/badge/version-1.2.4-blue?style=flat-square"/>
   <img src="https://img.shields.io/badge/python-3.10%2B-green?style=flat-square"/>
   <img src="https://img.shields.io/badge/docker-compose-0db7ed?style=flat-square"/>
   <img src="https://img.shields.io/badge/license-AGPLv3-orange?style=flat-square"/>
@@ -27,10 +27,11 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 - 🌍 **Timezone aware** - Configure your local timezone
 - 🕒 **12/24-hour time format** - Choose your preferred time display
 - 🧹 **Selective cleanup** - Choose what to prune: containers, images, networks, volumes
+- 📊 **All-Time Statistics** - Track cumulative space reclaimed and resources deleted across all runs
 - 🔔 **Smart notifications** - Gotify or ntfy.sh support with optional change-only alerts
 - 🎨 **Modern UI** - Dark theme with smooth animations and responsive design
 - 🔒 **Safe & controlled** - Manual trigger option and detailed logging
-- 📊 **Detailed reports** - See exactly what was cleaned and how much space was reclaimed
+- 📈 **Detailed reports** - See exactly what was cleaned and how much space was reclaimed
 
 ---
 
@@ -42,7 +43,15 @@ The overall look and feel of the PruneMate dashboard
   <img width="400" height="700" src="https://github.com/user-attachments/assets/3e9a6fc0-01c3-4da2-a095-d6f9480d4416" /> 
 </p>
 
-### Main Dashboard - Schedule Configuration
+
+### Main Dashboard - All-Time Statistics
+Track cumulative prune statistics showing total space reclaimed, resources deleted, and run history.
+
+<p align="center">
+  <img width="400" height="400" alt="prunemate-statistics" src="https://github.com/user-attachments/assets/[UPLOAD-YOUR-STATS-SCREENSHOT]" /> 
+</p>
+
+### Schedule Configuration
 Configure when and how often PruneMate should clean up your Docker resources.
 
 <p align="center">
@@ -136,8 +145,8 @@ services:
       - ./logs:/var/log
       - ./config:/config
     environment:
-      - PRUNEMATE_TZ=Europe/Amsterdam
-      - PRUNEMATE_TIME_24H=true
+      - PRUNEMATE_TZ=Europe/Amsterdam # Change this to your desired timezone
+      - PRUNEMATE_TIME_24H=true #false for 12-Hour format (AM/PM)
     restart: unless-stopped
 ```
 
@@ -208,20 +217,44 @@ Access the web interface at `http://localhost:7676/` (or your server IP) to conf
 2. **Loads latest config** from persistent storage
 3. **Executes Docker prune** commands for selected resource types
 4. **Collects statistics** on what was removed and space reclaimed
-5. **Sends notification** (if configured and enabled)
-6. **Logs everything** with timezone-aware timestamps
+5. **Updates all-time statistics** with cumulative data (space, counts, timestamps)
+6. **Sends notification** (if configured and enabled)
+7. **Logs everything** with timezone-aware timestamps
 
 ### File Structure
 
 ```
 /config/
 ├── config.json          # Your configuration (persistent)
+├── stats.json           # All-time statistics (cumulative data)
 ├── prunemate.lock       # Prevents concurrent runs
 └── last_run_key         # Tracks last successful run
 
 /var/log/
 └── prunemate.log        # Application logs (rotating, 5MB max)
 ```
+
+### All-Time Statistics
+
+PruneMate tracks cumulative statistics across all prune runs:
+
+**Metrics tracked:**
+- 💾 **Total Space Reclaimed** - Cumulative disk space freed (displayed in MB/GB/TB)
+- 📦 **Containers Deleted** - Total count of unused containers removed
+- 🖼️ **Images Deleted** - Total count of unused images removed
+- 🔗 **Networks Deleted** - Total count of unused networks removed
+- 💿 **Volumes Deleted** - Total count of unused volumes removed
+- 🔄 **Total Prune Runs** - Number of times prune has executed
+- 📅 **First Run** - Timestamp of the very first prune execution
+- 🕐 **Last Run** - Timestamp of the most recent prune execution
+
+**Technical details:**
+- Statistics persist in `/config/stats.json` using atomic writes with file locking
+- Updates occur after every prune run, regardless of whether resources were deleted
+- Timestamps are timezone-aware and respect `PRUNEMATE_TZ` setting
+- Date/time display in UI follows configured 12h/24h format
+- Statistics survive container restarts and updates
+- Auto-refresh after manual prune runs via web interface
 
 ---
 
@@ -286,6 +319,18 @@ Access the web interface at `http://localhost:7676/` (or your server IP) to conf
 ---
 
 ## 📝 Changelog
+
+### Version 1.2.4 (November 2025)
+- 📊 **NEW:** All-Time Statistics dashboard showing cumulative prune data
+  - Total space reclaimed across all runs
+  - Counters for containers, images, networks, volumes deleted
+  - Total prune runs with first/last run timestamps
+  - Statistics persist in `/config/stats.json`
+- 🐛 **Fixed:** 12-hour time format backend handling in `/update` and `/test-notification` routes
+- 🐛 **Fixed:** Minute display now shows leading zeros (e.g., "7:04" instead of "7:4")
+- 🐛 **Fixed:** Time input validation now runs on page load (`initTimeClamp()`)
+- 📝 **Improved:** All functions now have proper Python docstrings for better IDE support
+- 🔧 **Improved:** Code quality improvements and better error handling
 
 ### Version 1.2.3 (November 2025)
 - 🏗️ Added ARM64 architecture installation instructions (Apple Silicon, ARM servers, Raspberry Pi)
