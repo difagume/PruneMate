@@ -3,6 +3,7 @@ import json
 import logging
 import tempfile
 import datetime
+import calendar
 import urllib.request
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -51,7 +52,7 @@ DEFAULT_CONFIG = {
     },
 }
 
-config = DEFAULT_CONFIG.copy()
+config = json.loads(json.dumps(DEFAULT_CONFIG))
 # Lock to ensure thread-safe config read/write across workers
 import threading
 config_lock = threading.RLock()
@@ -300,6 +301,19 @@ def describe_schedule() -> str:
     return f"{freq} at {formatted_time} ({tz_name})"
 
 
+def validate_time(s: str) -> str:
+    """Validate HH:MM time format and clamp to valid 24h range on parse errors."""
+    try:
+        parts = s.split(":", 1)
+        h = int(parts[0])
+        m = int(parts[1]) if len(parts) > 1 else 0
+    except Exception:
+        h, m = 3, 0
+    h = max(0, min(23, h))
+    m = max(0, min(59, m))
+    return f"{h:02d}:{m:02d}"
+
+
 def effective_config():
     """Return the current effective configuration with relevant fields."""
     freq = config.get("frequency", "daily")
@@ -326,7 +340,7 @@ def load_config(silent=False):
         try:
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            merged = DEFAULT_CONFIG.copy()
+            merged = json.loads(json.dumps(DEFAULT_CONFIG))
             merged.update(data)
 
             # Migrate legacy gotify keys into new notifications structure (best-effort)
@@ -336,14 +350,17 @@ def load_config(silent=False):
                     "url": (data.get("gotify_url") or "").strip(),
                     "token": (data.get("gotify_token") or "").strip(),
                 }
-                merged.setdefault("notifications", {}).update({
+                # Ensure notifications exists with defaults before accessing nested keys
+                if "notifications" not in merged:
+                    merged["notifications"] = json.loads(json.dumps(DEFAULT_CONFIG["notifications"]))
+                merged["notifications"].update({
                     "provider": "gotify",
                     "gotify": got,
-                    "only_on_changes": bool(data.get("gotify_only_on_changes", merged["notifications"]["only_on_changes"])),
+                    "only_on_changes": bool(data.get("gotify_only_on_changes", merged["notifications"].get("only_on_changes", True))),
                 })
-            # Ensure notifications key exists
+            # Ensure notifications key exists with all required subkeys
             if "notifications" not in merged:
-                merged["notifications"] = DEFAULT_CONFIG["notifications"].copy()
+                merged["notifications"] = json.loads(json.dumps(DEFAULT_CONFIG["notifications"]))
 
             config = merged
             if not silent:
@@ -351,11 +368,11 @@ def load_config(silent=False):
         except FileNotFoundError:
             if not silent:
                 log(f"No config file found at {CONFIG_PATH}, using defaults.")
-            config = DEFAULT_CONFIG.copy()
+            config = json.loads(json.dumps(DEFAULT_CONFIG))
         except Exception as e:
             if not silent:
                 log(f"Error loading config from {CONFIG_PATH}: {e}. Using defaults.")
-            config = DEFAULT_CONFIG.copy()
+            config = json.loads(json.dumps(DEFAULT_CONFIG))
 
 
 def save_config():
@@ -541,7 +558,7 @@ def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
         # Volumes
         if config.get("prune_volumes"):
             try:
-                log("Pruning volumes…")
+                log("Pruning volumes (unused anonymous volumes only)…")
                 r = client.volumes.prune()
                 log(f"Volumes prune result: {r}")
                 volumes_deleted = len(r.get("VolumesDeleted") or [])
@@ -658,7 +675,10 @@ def check_and_run_scheduled_job():
         except Exception:
             dom_cfg = 1
         dom_cfg = max(1, min(31, dom_cfg))
-        if now.day == dom_cfg and hour_now == hour_cfg and minute_now == minute_cfg:
+        # Handle months with fewer days: run on last day if configured day doesn't exist
+        _, last_day = calendar.monthrange(now.year, now.month)
+        actual_dom = min(dom_cfg, last_day)
+        if now.day == actual_dom and hour_now == hour_cfg and minute_now == minute_cfg:
             should_run = True
 
     if not should_run:
@@ -758,19 +778,7 @@ def update():
     if provider == "ntfy" and not ntfy_enabled and ntfy_url and ntfy_topic:
         ntfy_enabled = True
 
-    # Validate HH:MM time; clamp to valid 24h range on parse errors
-    def _validate_time(s: str) -> str:
-        try:
-            parts = s.split(":", 1)
-            h = int(parts[0])
-            m = int(parts[1]) if len(parts) > 1 else 0
-        except Exception:
-            h, m = 3, 0
-        h = max(0, min(23, h))
-        m = max(0, min(59, m))
-        return f"{h:02d}:{m:02d}"
-
-    time_value = _validate_time(time_value)
+    time_value = validate_time(time_value)
 
     new_values = {
         "frequency": frequency,
@@ -872,18 +880,7 @@ def test_notification():
     if provider == "ntfy" and not ntfy_enabled and ntfy_url and ntfy_topic:
         ntfy_enabled = True
 
-    def _validate_time(s: str) -> str:
-        try:
-            parts = s.split(":", 1)
-            h = int(parts[0])
-            m = int(parts[1]) if len(parts) > 1 else 0
-        except Exception:
-            h, m = 3, 0
-        h = max(0, min(23, h))
-        m = max(0, min(59, m))
-        return f"{h:02d}:{m:02d}"
-
-    time_value = _validate_time(time_value)
+    time_value = validate_time(time_value)
 
     new_values = {
         "frequency": frequency,

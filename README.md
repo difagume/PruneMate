@@ -8,7 +8,7 @@
 <p align="center"><em>Docker image & resource cleanup helper, on a schedule!</em></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.4-blue?style=flat-square"/>
+  <img src="https://img.shields.io/badge/version-1.2.5-blue?style=flat-square"/>
   <img src="https://img.shields.io/badge/python-3.10%2B-green?style=flat-square"/>
   <img src="https://img.shields.io/badge/docker-compose-0db7ed?style=flat-square"/>
   <img src="https://img.shields.io/badge/license-AGPLv3-orange?style=flat-square"/>
@@ -319,6 +319,24 @@ PruneMate tracks cumulative statistics across all prune runs:
 ---
 
 ## 📝 Changelog
+
+### Version 1.2.5 (November 2025)
+- 🐛 **Fixed:** Monthly schedule bug where jobs never ran in shorter months
+  - Jobs configured for day 30-31 now run on last day of shorter months (e.g., Feb 28/29)
+  - Uses `calendar.monthrange()` to determine actual last day of each month
+- 🐛 **Fixed:** Configuration deep copy bug causing shared nested dictionaries
+  - All `.copy()` operations replaced with proper deep copy via `json.loads(json.dumps())`
+  - Prevents config corruption when modifying nested notification settings
+  - Fixed in 4 locations: initialization + 3 in `load_config()`
+- 🐛 **Fixed:** KeyError in legacy Gotify config migration
+  - Now safely checks if notifications dict exists before accessing nested keys
+  - Uses `.get()` with fallback values to prevent crashes on old config files
+- 🔧 **Improved:** Eliminated duplicate code - moved `_validate_time()` to module level
+  - Removed identical function definitions from `/update` and `/test-notification` routes
+  - Renamed to `validate_time()` as public module-level function
+- 📝 **Improved:** Better log clarity for prune operations
+  - Volumes: "Pruning volumes (unused anonymous volumes only)…"
+- 🧹 **Cleanup:** Moved `calendar` import from inline to top-level imports
 
 ### Version 1.2.4 (November 2025)
 - 📊 **NEW:** All-Time Statistics dashboard showing cumulative prune data
