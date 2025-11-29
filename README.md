@@ -159,16 +159,42 @@ services:
 docker-compose up -d
 ```
 
-3. **Access the web interface:**
+3. **Access the web UI of PruneMate:**
 
 Open your browser and navigate to:
-```
-http://localhost:7676/
-```
-or
+
 ```
 http://<your-server-ip>:7676/
 ```
+
+---
+
+## 🚀 Quick Start with Docker Run
+
+**Using Docker CLI:**
+
+```bash
+docker run -d \
+  --name prunemate \
+  -p 7676:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(pwd)/logs:/var/log \
+  -v $(pwd)/config:/config \
+  -e PRUNEMATE_TZ=Europe/Amsterdam \
+  -e PRUNEMATE_TIME_24H=true \
+  --restart unless-stopped \
+  anoniemerd/prunemate:latest
+```
+
+**Access the web UI:**
+
+```
+http://<your-server-ip>:7676/
+```
+
+
+
+
 
 ---
 
