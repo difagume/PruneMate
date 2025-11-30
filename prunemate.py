@@ -44,6 +44,7 @@ DEFAULT_CONFIG = {
     "prune_images": True,
     "prune_networks": False,
     "prune_volumes": False,
+    "docker_hosts": [],
     "notifications": {
         "provider": "gotify",
         "gotify": {"enabled": False, "url": "", "token": ""},
@@ -182,6 +183,8 @@ def load_stats() -> dict:
         if STATS_FILE.exists():
             with open(STATS_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
+    except json.JSONDecodeError as e:
+        log(f"Stats file corrupt (invalid JSON): {e}. Using defaults and will overwrite on next save.")
     except Exception as e:
         log(f"Error loading stats from {STATS_FILE}: {e}")
     
@@ -307,7 +310,8 @@ def validate_time(s: str) -> str:
         parts = s.split(":", 1)
         h = int(parts[0])
         m = int(parts[1]) if len(parts) > 1 else 0
-    except Exception:
+    except Exception as e:
+        log(f"Invalid time format '{s}': {e}. Falling back to 03:00")
         h, m = 3, 0
     h = max(0, min(23, h))
     m = max(0, min(59, m))
@@ -324,6 +328,7 @@ def effective_config():
         "prune_images": config.get("prune_images"),
         "prune_networks": config.get("prune_networks"),
         "prune_volumes": config.get("prune_volumes"),
+        "docker_hosts": config.get("docker_hosts"),
         "notifications": config.get("notifications"),
     }
     if freq == "weekly":
@@ -344,7 +349,8 @@ def load_config(silent=False):
             merged.update(data)
 
             # Migrate legacy gotify keys into new notifications structure (best-effort)
-            if any(k in data for k in ("gotify_enabled", "gotify_url", "gotify_token", "gotify_only_on_changes")):
+            # Only migrate if new structure doesn't exist in loaded config
+            if "notifications" not in data and any(k in data for k in ("gotify_enabled", "gotify_url", "gotify_token", "gotify_only_on_changes")):
                 got = {
                     "enabled": bool(data.get("gotify_enabled")),
                     "url": (data.get("gotify_url") or "").strip(),
@@ -361,6 +367,23 @@ def load_config(silent=False):
             # Ensure notifications key exists with all required subkeys
             if "notifications" not in merged:
                 merged["notifications"] = json.loads(json.dumps(DEFAULT_CONFIG["notifications"]))
+            
+            # Ensure docker_hosts exists and has valid structure
+            if "docker_hosts" not in merged or not isinstance(merged["docker_hosts"], list):
+                merged["docker_hosts"] = json.loads(json.dumps(DEFAULT_CONFIG["docker_hosts"]))
+            # Clean up: remove Local/unix:// entries that shouldn't be persisted
+            merged["docker_hosts"] = [
+                h for h in merged["docker_hosts"]
+                if h.get("name") != "Local" and "unix://" not in h.get("url", "")
+            ]
+            # Validate each remaining host entry has required fields
+            for host in merged["docker_hosts"]:
+                if "name" not in host:
+                    host["name"] = "Unnamed"
+                if "url" not in host:
+                    host["url"] = "tcp://localhost:2375"
+                if "enabled" not in host:
+                    host["enabled"] = True
 
             config = merged
             if not silent:
@@ -383,10 +406,18 @@ def save_config():
             parent = path.parent or Path(".")
             parent.mkdir(parents=True, exist_ok=True)
 
+            # Clean up docker_hosts: remove Local/unix:// entries before saving
+            config_to_save = json.loads(json.dumps(config))
+            if "docker_hosts" in config_to_save:
+                config_to_save["docker_hosts"] = [
+                    h for h in config_to_save["docker_hosts"]
+                    if h.get("name") != "Local" and "unix://" not in h.get("url", "")
+                ]
+
             tmp_path = None
             try:
                 with tempfile.NamedTemporaryFile("w", delete=False, dir=str(parent), encoding="utf-8") as tmp:
-                    json.dump(config, tmp, indent=2)
+                    json.dump(config_to_save, tmp, indent=2)
                     tmp.flush()
                     os.fsync(tmp.fileno())
                     tmp_path = Path(tmp.name)
@@ -397,7 +428,7 @@ def save_config():
                     pass
                 # atomic replace
                 tmp_path.replace(path)
-                log(f"Config saved to {path}: {_redact_for_log(effective_config())}")
+                log(f"Config saved to {path}: {_redact_for_log(config_to_save)}")
             finally:
                 # cleanup leftover temp if any
                 if tmp_path and tmp_path.exists() and tmp_path != path:
@@ -466,6 +497,33 @@ def send_notification(title: str, message: str, priority: int = 5) -> bool:
     return False
 
 
+def create_docker_client(host_url: str):
+    """Create a Docker client for the given host URL.
+    
+    Args:
+        host_url: Docker host URL (e.g., 'unix:///var/run/docker.sock', 'tcp://host:2375')
+    
+    Returns:
+        Docker client instance or None on failure
+    """
+    if docker is None:
+        log("Docker SDK not available.")
+        return None
+    
+    try:
+        # Support both unix sockets and TCP connections
+        if host_url.startswith("unix://"):
+            return docker.DockerClient(base_url=host_url)
+        elif host_url.startswith("tcp://") or host_url.startswith("http://") or host_url.startswith("https://"):
+            return docker.DockerClient(base_url=host_url)
+        else:
+            # Fallback: try as-is
+            return docker.DockerClient(base_url=host_url)
+    except Exception as e:
+        log(f"Failed to create Docker client for {host_url}: {e}")
+        return None
+
+
 def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
     """Execute Docker pruning based on current configuration."""
     # Ensure we have the latest config before running prune job
@@ -512,73 +570,156 @@ def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
             log("Docker SDK not available; aborting prune.")
             return False
 
-        client = None
-        try:
-            client = docker.from_env()
-        except Exception as e:
-            log(f"Failed to initialize Docker client: {e}. Aborting prune run.")
-            return False
-
-        containers_deleted = images_deleted = networks_deleted = volumes_deleted = 0
+        # Always include local Docker socket + external hosts from config
+        docker_hosts = config.get("docker_hosts", [])
+        # Filter out any 'Local' entries from config to prevent duplicates
+        enabled_external_hosts = [
+            h for h in docker_hosts 
+            if h.get("enabled", True) and h.get("name") != "Local" and "unix://" not in h.get("url", "")
+        ]
+        
+        # Build complete host list: local socket first, then external hosts
+        all_hosts = [
+            {"name": "Local", "url": "unix:///var/run/docker.sock", "enabled": True}
+        ] + enabled_external_hosts
+        
+        log(f"Processing {len(all_hosts)} host(s) (1 local + {len(enabled_external_hosts)} external)...")
+        
+        # Aggregate totals across all hosts
+        total_containers_deleted = 0
+        total_images_deleted = 0
+        total_networks_deleted = 0
+        total_volumes_deleted = 0
         total_space_reclaimed = 0
-
-        # Containers
-        if config.get("prune_containers"):
+        
+        # Per-host results for detailed reporting
+        host_results = []
+        
+        for host in all_hosts:
+            host_name = host.get("name", "Unnamed")
+            host_url = host.get("url", "unix:///var/run/docker.sock")
+            
+            log(f"--- Processing host: {host_name} ({host_url}) ---")
+            
+            client = None
             try:
-                log("Pruning containers…")
-                r = client.containers.prune()
-                log(f"Containers prune result: {r}")
-                containers_deleted = len(r.get("ContainersDeleted") or [])
-                total_space_reclaimed += int(r.get("SpaceReclaimed") or 0)
-            except Exception as e:
-                log(f"Error pruning containers: {e}")
+                client = create_docker_client(host_url)
+                if client is None:
+                    log(f"Failed to connect to {host_name}; skipping this host.")
+                    host_results.append({
+                        "name": host_name,
+                        "url": host_url,
+                        "success": False,
+                        "error": "Failed to connect",
+                        "containers": 0,
+                        "images": 0,
+                        "networks": 0,
+                        "volumes": 0,
+                        "space": 0,
+                    })
+                    continue
+                
+                containers_deleted = images_deleted = networks_deleted = volumes_deleted = 0
+                space_reclaimed = 0
 
-        # Images
-        if config.get("prune_images"):
-            try:
-                log("Pruning images (all unused)…")
-                r = client.images.prune(filters={"dangling": False})
-                log(f"Images prune result: {r}")
-                deleted_list = r.get("ImagesDeleted") or []
-                images_deleted = len(deleted_list)
-                total_space_reclaimed += int(r.get("SpaceReclaimed") or 0)
-            except Exception as e:
-                log(f"Error pruning images: {e}")
+                # Containers
+                if config.get("prune_containers"):
+                    try:
+                        log(f"[{host_name}] Pruning containers…")
+                        r = client.containers.prune()
+                        log(f"[{host_name}] Containers prune result: {r}")
+                        containers_deleted = len(r.get("ContainersDeleted") or [])
+                        space_reclaimed += int(r.get("SpaceReclaimed") or 0)
+                    except Exception as e:
+                        log(f"[{host_name}] Error pruning containers: {e}")
 
-        # Networks
-        if config.get("prune_networks"):
-            try:
-                log("Pruning networks…")
-                r = client.networks.prune()
-                log(f"Networks prune result: {r}")
-                networks_deleted = len(r.get("NetworksDeleted") or [])
-            except Exception as e:
-                log(f"Error pruning networks: {e}")
+                # Images
+                if config.get("prune_images"):
+                    try:
+                        log(f"[{host_name}] Pruning images (all unused)…")
+                        r = client.images.prune(filters={"dangling": False})
+                        log(f"[{host_name}] Images prune result: {r}")
+                        deleted_list = r.get("ImagesDeleted") or []
+                        images_deleted = len(deleted_list)
+                        space_reclaimed += int(r.get("SpaceReclaimed") or 0)
+                    except Exception as e:
+                        log(f"[{host_name}] Error pruning images: {e}")
 
-        # Volumes
-        if config.get("prune_volumes"):
-            try:
-                log("Pruning volumes (unused anonymous volumes only)…")
-                r = client.volumes.prune()
-                log(f"Volumes prune result: {r}")
-                volumes_deleted = len(r.get("VolumesDeleted") or [])
-                total_space_reclaimed += int(r.get("SpaceReclaimed") or 0)
-            except Exception as e:
-                log(f"Error pruning volumes: {e}")
+                # Networks
+                if config.get("prune_networks"):
+                    try:
+                        log(f"[{host_name}] Pruning networks…")
+                        r = client.networks.prune()
+                        log(f"[{host_name}] Networks prune result: {r}")
+                        networks_deleted = len(r.get("NetworksDeleted") or [])
+                    except Exception as e:
+                        log(f"[{host_name}] Error pruning networks: {e}")
 
-        log("Prune job finished.")
+                # Volumes
+                if config.get("prune_volumes"):
+                    try:
+                        log(f"[{host_name}] Pruning volumes (unused anonymous volumes only)…")
+                        r = client.volumes.prune()
+                        log(f"[{host_name}] Volumes prune result: {r}")
+                        volumes_deleted = len(r.get("VolumesDeleted") or [])
+                        space_reclaimed += int(r.get("SpaceReclaimed") or 0)
+                    except Exception as e:
+                        log(f"[{host_name}] Error pruning volumes: {e}")
+
+                log(f"[{host_name}] Prune completed: containers={containers_deleted}, images={images_deleted}, networks={networks_deleted}, volumes={volumes_deleted}, space={human_bytes(space_reclaimed)}")
+                
+                # Add to totals
+                total_containers_deleted += containers_deleted
+                total_images_deleted += images_deleted
+                total_networks_deleted += networks_deleted
+                total_volumes_deleted += volumes_deleted
+                total_space_reclaimed += space_reclaimed
+                
+                # Record host result
+                host_results.append({
+                    "name": host_name,
+                    "url": host_url,
+                    "success": True,
+                    "containers": containers_deleted,
+                    "images": images_deleted,
+                    "networks": networks_deleted,
+                    "volumes": volumes_deleted,
+                    "space": space_reclaimed,
+                })
+                
+            except Exception as e:
+                log(f"[{host_name}] Unexpected error during prune: {e}")
+                host_results.append({
+                    "name": host_name,
+                    "url": host_url,
+                    "success": False,
+                    "error": str(e),
+                    "containers": 0,
+                    "images": 0,
+                    "networks": 0,
+                    "volumes": 0,
+                    "space": 0,
+                })
+            finally:
+                if client is not None:
+                    try:
+                        client.close()
+                    except Exception:
+                        pass
+
+        log("Prune job finished for all hosts.")
 
         anything_deleted = any([
-            containers_deleted, images_deleted, networks_deleted,
-            volumes_deleted, total_space_reclaimed > 0
+            total_containers_deleted, total_images_deleted, total_networks_deleted,
+            total_volumes_deleted, total_space_reclaimed > 0
         ])
 
         # Update all-time statistics (always, even if nothing was pruned)
         update_stats(
-            containers=containers_deleted,
-            images=images_deleted,
-            networks=networks_deleted,
-            volumes=volumes_deleted,
+            containers=total_containers_deleted,
+            images=total_images_deleted,
+            networks=total_networks_deleted,
+            volumes=total_volumes_deleted,
             space=total_space_reclaimed
         )
 
@@ -587,19 +728,52 @@ def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
             log("Nothing was pruned; skipping notification.")
             return True
 
-        # Build notification summary
+        # Build notification summary with per-host breakdown
         summary_lines = [
-            f"Schedule: {describe_schedule()}",
+            f"📅 {describe_schedule()}",
             "",
-            f"Containers deleted: {containers_deleted}",
-            f"Images deleted:     {images_deleted}",
-            f"Networks deleted:   {networks_deleted}",
-            f"Volumes deleted:    {volumes_deleted}",
-            f"Total space reclaimed: {human_bytes(total_space_reclaimed) if total_space_reclaimed else '0 B'}",
         ]
-        if not anything_deleted:
+        
+        # Add per-host details if multiple hosts
+        if len(all_hosts) > 1:
+            summary_lines.append("📊 Per-host results:")
+            for result in host_results:
+                if result.get("success"):
+                    has_deletions = any([result['containers'], result['images'], result['networks'], result['volumes']])
+                    
+                    if has_deletions:
+                        summary_lines.append(f"• {result['name']}")
+                        if result['containers']:
+                            summary_lines.append(f"  - 🗑️ {result['containers']} containers")
+                        if result['images']:
+                            summary_lines.append(f"  - 💿 {result['images']} images")
+                        if result['networks']:
+                            summary_lines.append(f"  - 🌐 {result['networks']} networks")
+                        if result['volumes']:
+                            summary_lines.append(f"  - 📦 {result['volumes']} volumes")
+                        if result['space']:
+                            summary_lines.append(f"  - 💾 {human_bytes(result['space'])} reclaimed")
+                    else:
+                        summary_lines.append(f"• {result['name']}: ✅ Nothing to prune")
+                else:
+                    summary_lines.append(f"• {result['name']}: ❌ {result.get('error', 'Unknown error')}")
             summary_lines.append("")
-            summary_lines.append("Nothing to prune this run.")
+        
+        # Add totals
+        summary_lines.append("📈 Total across all hosts:")
+        if anything_deleted:
+            if total_containers_deleted:
+                summary_lines.append(f"  - 🗑️ Containers: {total_containers_deleted}")
+            if total_images_deleted:
+                summary_lines.append(f"  - 💿 Images: {total_images_deleted}")
+            if total_networks_deleted:
+                summary_lines.append(f"  - 🌐 Networks: {total_networks_deleted}")
+            if total_volumes_deleted:
+                summary_lines.append(f"  - 📦 Volumes: {total_volumes_deleted}")
+            if total_space_reclaimed:
+                summary_lines.append(f"  - 💾 Space reclaimed: {human_bytes(total_space_reclaimed)}")
+        else:
+            summary_lines.append("✅ Nothing to prune this run")
 
         message = "\n".join(summary_lines)
         send_notification("PruneMate run completed", message)
@@ -612,11 +786,6 @@ def run_prune_job(origin: str = "unknown", wait: bool = False) -> bool:
                 lock.release()
             except Exception:
                 pass
-        try:
-            if client is not None:
-                client.close()
-        except Exception:
-            pass
 
 
 def compute_run_key(now: datetime.datetime) -> str:
@@ -739,6 +908,10 @@ def update():
             minute = int(request.form.get("time_minute", "0"))
             period = request.form.get("time_period", "AM")
             
+            # Validate ranges
+            hour_12 = max(1, min(12, hour_12))
+            minute = max(0, min(59, minute))
+            
             # Convert to 24h
             if period == "AM":
                 hour_24 = 0 if hour_12 == 12 else hour_12
@@ -758,19 +931,19 @@ def update():
         day_of_month = 1
     day_of_month = max(1, min(31, day_of_month))
 
-    prune_containers = bool(request.form.get("prune_containers"))
-    prune_images = bool(request.form.get("prune_images"))
-    prune_networks = bool(request.form.get("prune_networks"))
-    prune_volumes = bool(request.form.get("prune_volumes"))
+    prune_containers = "prune_containers" in request.form
+    prune_images = "prune_images" in request.form
+    prune_networks = "prune_networks" in request.form
+    prune_volumes = "prune_volumes" in request.form
 
     provider = request.form.get("notifications_provider", "gotify")
-    gotify_enabled = bool(request.form.get("gotify_enabled"))
+    gotify_enabled = "gotify_enabled" in request.form
     gotify_url = (request.form.get("gotify_url") or "").strip()
     gotify_token = (request.form.get("gotify_token") or "").strip()
-    ntfy_enabled = bool(request.form.get("ntfy_enabled"))
+    ntfy_enabled = "ntfy_enabled" in request.form
     ntfy_url = (request.form.get("ntfy_url") or "").strip()
     ntfy_topic = (request.form.get("ntfy_topic") or "").strip()
-    only_on_changes = bool(request.form.get("notifications_only_on_changes"))
+    only_on_changes = "notifications_only_on_changes" in request.form
 
     # Auto-enable selected provider if fields are filled but toggle was forgotten
     if provider == "gotify" and not gotify_enabled and gotify_url and gotify_token:
@@ -842,6 +1015,10 @@ def test_notification():
             minute = int(request.form.get("time_minute", "0"))
             period = request.form.get("time_period", "AM")
             
+            # Validate ranges
+            hour_12 = max(1, min(12, hour_12))
+            minute = max(0, min(59, minute))
+            
             # Convert to 24h
             if period == "AM":
                 hour_24 = 0 if hour_12 == 12 else hour_12
@@ -860,19 +1037,19 @@ def test_notification():
         day_of_month = 1
     day_of_month = max(1, min(31, day_of_month))
 
-    prune_containers = bool(request.form.get("prune_containers"))
-    prune_images = bool(request.form.get("prune_images"))
-    prune_networks = bool(request.form.get("prune_networks"))
-    prune_volumes = bool(request.form.get("prune_volumes"))
+    prune_containers = "prune_containers" in request.form
+    prune_images = "prune_images" in request.form
+    prune_networks = "prune_networks" in request.form
+    prune_volumes = "prune_volumes" in request.form
 
     provider = request.form.get("notifications_provider", "gotify")
-    gotify_enabled = bool(request.form.get("gotify_enabled"))
+    gotify_enabled = "gotify_enabled" in request.form
     gotify_url = (request.form.get("gotify_url") or "").strip()
     gotify_token = (request.form.get("gotify_token") or "").strip()
-    ntfy_enabled = bool(request.form.get("ntfy_enabled"))
+    ntfy_enabled = "ntfy_enabled" in request.form
     ntfy_url = (request.form.get("ntfy_url") or "").strip()
     ntfy_topic = (request.form.get("ntfy_topic") or "").strip()
-    only_on_changes = bool(request.form.get("notifications_only_on_changes"))
+    only_on_changes = "notifications_only_on_changes" in request.form
 
     # Auto-enable selected provider if fields are filled but toggle was forgotten
     if provider == "gotify" and not gotify_enabled and gotify_url and gotify_token:
@@ -925,6 +1102,124 @@ def test_notification():
 def stats():
     """Return all-time statistics as JSON."""
     return jsonify(load_stats())
+
+
+@app.route("/hosts")
+def list_hosts():
+    """Return list of Docker hosts as JSON."""
+    load_config(silent=True)
+    hosts = config.get("docker_hosts", [])
+    return jsonify({"hosts": hosts})
+
+
+@app.route("/hosts/add", methods=["POST"])
+def add_host():
+    """Add a new Docker host."""
+    load_config(silent=True)
+    
+    name = (request.form.get("name") or "").strip()
+    url = (request.form.get("url") or "").strip()
+    enabled = "enabled" in request.form
+    
+    if not name or not url:
+        flash("Host name and URL are required.", "warn")
+        return redirect(url_for("index"))
+    
+    # Validate URL format
+    valid_protocols = ["tcp://", "http://", "https://"]
+    if not any(url.startswith(proto) for proto in valid_protocols):
+        flash("URL must start with tcp://, http://, or https://", "warn")
+        return redirect(url_for("index"))
+    
+    new_host = {
+        "name": name,
+        "url": url,
+        "enabled": enabled
+    }
+    
+    if "docker_hosts" not in config:
+        config["docker_hosts"] = []
+    
+    config["docker_hosts"].append(new_host)
+    save_config()
+    
+    flash(f"Docker host '{name}' added successfully.", "info")
+    return redirect(url_for("index"))
+
+
+@app.route("/hosts/<int:index>/update", methods=["POST"])
+def update_host(index):
+    """Update an existing Docker host."""
+    load_config(silent=True)
+    
+    hosts = config.get("docker_hosts", [])
+    if index < 0 or index >= len(hosts):
+        flash("Invalid host index.", "warn")
+        return redirect(url_for("index"))
+    
+    name = (request.form.get("name") or "").strip()
+    url = (request.form.get("url") or "").strip()
+    enabled = "enabled" in request.form
+    
+    if not name or not url:
+        flash("Host name and URL are required.", "warn")
+        return redirect(url_for("index"))
+    
+    # Validate URL format
+    valid_protocols = ["tcp://", "http://", "https://"]
+    if not any(url.startswith(proto) for proto in valid_protocols):
+        flash("URL must start with tcp://, http://, or https://", "warn")
+        return redirect(url_for("index"))
+    
+    hosts[index] = {
+        "name": name,
+        "url": url,
+        "enabled": enabled
+    }
+    
+    config["docker_hosts"] = hosts
+    save_config()
+    
+    flash(f"Docker host '{name}' updated successfully.", "info")
+    return redirect(url_for("index"))
+
+
+@app.route("/hosts/<int:index>/delete", methods=["POST"])
+def delete_host(index):
+    """Delete a Docker host."""
+    load_config(silent=True)
+    
+    hosts = config.get("docker_hosts", [])
+    if index < 0 or index >= len(hosts):
+        flash("Invalid host index.", "warn")
+        return redirect(url_for("index"))
+    
+    # Note: It's safe to delete all external hosts - Local is always available at runtime
+    deleted_name = hosts[index].get("name", "Unknown")
+    del hosts[index]
+    
+    config["docker_hosts"] = hosts
+    save_config()
+    
+    flash(f"Docker host '{deleted_name}' deleted successfully.", "info")
+    return redirect(url_for("index"))
+
+
+@app.route("/hosts/<int:index>/toggle", methods=["POST"])
+def toggle_host(index):
+    """Toggle enabled/disabled status of a Docker host."""
+    load_config(silent=True)
+    
+    hosts = config.get("docker_hosts", [])
+    if index < 0 or index >= len(hosts):
+        return jsonify({"success": False, "error": "Invalid host index"}), 400
+    
+    hosts[index]["enabled"] = not hosts[index].get("enabled", True)
+    config["docker_hosts"] = hosts
+    save_config()
+    
+    status = "enabled" if hosts[index]["enabled"] else "disabled"
+    return jsonify({"success": True, "enabled": hosts[index]["enabled"], "message": f"Host {status}"})
 
 
 class StandaloneApplication(BaseApplication):

@@ -8,7 +8,7 @@
 <p align="center"><em>Docker image & resource cleanup helper, on a schedule!</em></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.5-purple?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/version-1.2.6-purple?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/python-3.12-yellow?style=for-the-badge&logo=python&logoColor=ffffff"/>
   <img src="https://img.shields.io/badge/docker-compose-0db7ed?style=for-the-badge&logo=docker&logoColor=ffffff"/>
   <img src="https://img.shields.io/badge/license-AGPLv3-orange?style=for-the-badge"/>
@@ -21,6 +21,7 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 
 **Keep your Docker host tidy with scheduled cleanup of unused images, containers, networks, and volumes.**
 
+> ⚠️ **DISCLAIMER**: PruneMate deletes Docker resources. Ensure you understand what will be pruned before enabling automated schedules. The author is not responsible for any data loss or system issues. **Use at your own risk.**
 
 ---
 
@@ -29,6 +30,7 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 - 🕐 **Flexible scheduling** - Daily, Weekly, or Monthly cleanup runs
 - 🌍 **Timezone aware** - Configure your local timezone
 - 🕒 **12/24-hour time format** - Choose your preferred time display
+- 🐳 **Multi-host support** - Manage multiple Docker hosts from one interface (requires docker-socket-proxy on remote hosts)
 - 🧹 **Selective cleanup** - Choose what to prune: containers, images, networks, volumes
 - 📊 **All-Time Statistics** - Track cumulative space reclaimed and resources deleted across all runs
 - 🔔 **Smart notifications** - Gotify or ntfy.sh support with optional change-only alerts
@@ -287,6 +289,66 @@ PruneMate tracks cumulative statistics across all prune runs:
 
 ---
 
+## 🌐 Multi-Host Setup (Optional)
+
+PruneMate can manage multiple Docker hosts from a single interface. Each prune operation runs across all enabled hosts with aggregated results.
+
+### Security First: Use Docker Socket Proxy
+
+⚠️ **Never expose Docker sockets directly!** Always use [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy) to limit API access.
+
+### Quick Setup
+
+**1. Deploy proxy on each remote host:**
+
+```yaml
+services:
+  dockerproxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    environment:
+      - CONTAINERS=1
+      - IMAGES=1
+      - NETWORKS=1
+      - VOLUMES=1
+      - POST=1          # Required for prune operations
+    ports:
+      - "2375:2375"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+```
+
+**2. Add hosts in PruneMate UI:**
+- Navigate to **Docker Hosts** section
+- Click **Add New Host**
+- Enter name (e.g., "NAS") and URL (e.g., `tcp://192.168.1.50:2375`)
+- Toggle hosts on/off as needed
+
+**3. Test connection:**
+Click **Run now** and check logs for successful connection to all hosts.
+
+### Notifications with Multiple Hosts
+
+Notifications show per-host breakdown:
+```
+• Local
+  - 💿 2 containers, 5 images
+  - 💾 450.2 MB reclaimed
+• NAS
+  - 💿 12 images, 1 network
+  - 💾 1.2 GB reclaimed
+
+Total: 1.8 GB reclaimed
+```
+
+### Troubleshooting
+
+- **Connection refused**: Verify proxy is running (`docker ps`) and port 2375 is accessible
+- **Permission denied**: Ensure proxy has `POST=1` environment variable
+- **Host skipped**: Check URL format starts with `tcp://`, `http://`, or `https://`
+
+---
+
 ## 🔔 Notification Setup
 
 ### Gotify
@@ -347,7 +409,18 @@ PruneMate tracks cumulative statistics across all prune runs:
 
 ---
 
-## 📝 Changelog
+## 📜 Changelog
+
+### Version 1.2.6 (November 2025)
+- 🐳 **NEW** Multi-host support - Manage multiple Docker hosts from one interface
+  - Per-host results in notifications with detailed breakdown for each Docker host
+  - Docker hosts management UI (add, edit, enable/disable, delete external hosts)
+- 🔔 **Improved:** Notification formatting with enhanced layout, consistent emoji usage, and bullet points
+- 📬 **Improved:** Notifications now show per-host breakdown for multi-host setups with aggregate totals
+- 🎯 **Improved:** Better visual hierarchy in notifications with clear sections and spacing
+- 🐛 **Fixed:** Critical checkbox handling bug affecting all prune and notification toggles
+- 🔧 **Improved:** Code quality improvements and better error handling
+
 
 ### Version 1.2.5 (November 2025)
 - 🐛 **Fixed:** Monthly schedule bug where jobs never ran in shorter months
@@ -446,6 +519,20 @@ By using, modifying, or distributing this software, you **must**:
 - License any derivative works under **AGPL-3.0**
 
 See the full license text in: [`LICENSE`](./LICENSE)
+
+## ⚠️ Disclaimer
+
+**USE AT YOUR OWN RISK.** PruneMate is provided "as is" without warranty of any kind. The author(s) and contributors are not responsible for:
+- Data loss from pruned Docker resources
+- Service interruptions or downtime
+- System instability or performance issues
+- Any damages resulting from the use or misuse of this software
+
+Always:
+- ✅ Understand which resources will be deleted
+- ✅ Keep backups of important data and configurations
+- ✅ Review logs after prune operations
+- ✅ Start with conservative settings
 
 © 2025 – PruneMate Project
 

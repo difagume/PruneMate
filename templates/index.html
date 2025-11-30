@@ -42,11 +42,12 @@
       background:
         radial-gradient(600px 300px at 12% 6%, rgba(14,165,233,0.10), transparent 22%),
         linear-gradient(135deg, var(--bg-900), var(--bg-800));
+      background-attachment: fixed;
       min-height:100vh;
       display:flex;
       align-items:flex-start;
       justify-content:center;
-      padding:28px 16px;
+      padding:16px 16px;
     }
 
     /* Main content container with glass morphism effect */
@@ -55,7 +56,7 @@
       max-width:820px;
       background: linear-gradient(180deg, rgba(18,25,44,0.9), rgba(8,12,22,0.9));
       border-radius:var(--radius-xl);
-      padding:26px;
+      padding:18px;
       position:relative;
       box-shadow: var(--shadow-strong), 0 10px 35px rgba(2,6,23,0.6);
       border:1px solid var(--glass-border);
@@ -75,18 +76,18 @@
     }
 
     /* Header layout and logo styling */
-    .header{display:flex;align-items:center;gap:18px;margin-bottom:12px}
+    .header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
     .title-block{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;transform:translateY(4px)}
-    .logo-wrap{width:88px;height:88px;border-radius:20px;flex-shrink:0}
+    .logo-wrap{width:76px;height:76px;border-radius:16px;flex-shrink:0}
     .logo-wrap img{width:100%;height:100%;object-fit:cover;display:block}
     .title-block h1{display:none}
-    .wordmark{height:44px;max-width:360px}
-    .title-block p{margin:6px 0 0 0;color:var(--muted);font-size:0.95rem}
+    .wordmark{height:36px;max-width:360px}
+    .title-block p{margin:4px 0 0 0;color:var(--muted);font-size:0.88rem}
 
     /* Typography for headings and labels */
-    h2{font-size:1.05rem;margin-top:1.4rem;margin-bottom:0.4rem;color:var(--text)}
-    h3{font-size:0.95rem;margin:6px 0 8px 0;color:var(--muted);font-weight:600}
-    label{font-size:0.95rem;color:var(--text)}
+    h2{font-size:0.98rem;margin-top:0.9rem;margin-bottom:0.3rem;color:var(--text)}
+    h3{font-size:0.9rem;margin:4px 0 6px 0;color:var(--muted);font-weight:600}
+    label{font-size:0.9rem;color:var(--text)}
 
     /* Flash messages */
     .flash{padding:10px 12px;border-radius:12px;margin:10px 0;font-size:0.95rem}
@@ -148,13 +149,11 @@
     .card{
       background: linear-gradient(160deg, rgba(12,18,32,0.92), rgba(10,14,24,0.86));
       border-radius:var(--radius-lg);
-      padding:16px;
+      padding:12px;
       border:1px solid var(--card-border);
       box-shadow: 0 6px 26px rgba(3,6,14,0.5);
-      margin-top:10px;
+      margin-top:6px;
     }
-    /* Special styling for schedule card */
-    .card.schedule{border-color:var(--accent-soft);box-shadow: 0 20px 60px rgba(8,15,28,0.6), 0 0 40px rgba(14,165,233,0.06)}
 
     /* Row and field layout */
     .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:8px}
@@ -165,22 +164,22 @@
     .card.schedule .row.inline .field > label:first-child{padding-left:2mm;}
 
     /* Buttons: consistent vertical centering with asymmetric padding (text nudged up 1mm) */
-    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;padding:9px 20px 11px 20px;font-size:0.95rem;font-weight:600;cursor:pointer;border:none;transition:transform .08s ease,box-shadow .12s ease,opacity .12s ease; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height:1.05;}
-    .btn-primary{background:linear-gradient(90deg,#22c55e,#16a34a);color:#05220f;box-shadow:var(--btn-elev);padding:9px 24px 11px 24px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;padding:7px 18px 9px 18px;font-size:0.9rem;font-weight:600;cursor:pointer;border:none;transition:transform .08s ease,box-shadow .12s ease,opacity .12s ease; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height:1.05;}
+    .btn-primary{background:linear-gradient(90deg,#22c55e,#16a34a);color:#05220f;box-shadow:var(--btn-elev);padding:7px 20px 9px 20px}
     .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 44px rgba(16,185,129,0.14)}
     /* Secondary button: subtle glass effect with theme border */
-    .btn-secondary{background:linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02));color:var(--text);border:1px solid var(--glass-border);padding:9px 22px 11px 22px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.015),0 4px 14px rgba(2,6,23,0.5);backdrop-filter:blur(4px) saturate(1.1);white-space:nowrap;}
+    .btn-secondary{background:linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02));color:var(--text);border:1px solid var(--glass-border);padding:7px 18px 9px 18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.015),0 4px 14px rgba(2,6,23,0.5);backdrop-filter:blur(4px) saturate(1.1);white-space:nowrap;}
     .btn-secondary:hover{transform:translateY(-2px);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03));border-color:rgba(148,163,184,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.015),0 8px 24px rgba(2,6,23,0.6);}
     .btn-secondary:active{transform:translateY(1px);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03),0 2px 10px rgba(2,6,23,0.55);}
 
     /* Small text styling for hints and footer */
-    .hint{font-size:0.82rem;color:var(--muted);margin-top:6px}
-    .footer{text-align:center;margin-top:18px;font-size:0.82rem;color:#9aa4b2}
+    .hint{font-size:0.78rem;color:var(--muted);margin-top:4px}
+    .footer{text-align:center;margin-top:12px;font-size:0.78rem;color:#9aa4b2}
 
     /* Toggle switches */
     /* Toggle row container layout */
-    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
-    .toggle-row span.label-text{font-size:0.95rem;color:var(--text)}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0}
+    .toggle-row span.label-text{font-size:0.9rem;color:var(--text)}
     /* Switch container dimensions */
     .switch{position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0}
     /* Hide native checkbox input */
@@ -242,8 +241,13 @@
       .container{padding:18px;border-radius:18px}
       .row.inline{flex-direction:column;align-items:flex-start;gap:10px}
       select,input[type="time"],input[type="number"]{width:100%}
-      .logo-wrap{width:72px;height:72px}
+      .logo-wrap{width:80px;height:80px}
       .wordmark{height:36px}
+      /* Statistics grid: 2 columns on mobile */
+      #stats-content > div:first-child{grid-template-columns:repeat(2,1fr)!important;}
+      /* Schedule grid: stack vertically on mobile */
+      .card.schedule .row.inline{grid-template-columns:1fr!important;gap:10px;}
+      .card.schedule .row.inline .field{width:100%;}
     }
 
     /* Utility classes */
@@ -251,12 +255,19 @@
     /* Screen reader only text (accessible but invisible) */
     .visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
     /* Collapsible notification panel */
-    #notif-card #notif-panel{transition:max-height .32s cubic-bezier(.25,.8,.25,1);}
+    #notif-card #notif-panel{transition:max-height .2s ease-out;overflow:hidden;}
     #notif-card.collapsed #notif-panel{max-height:0!important;}
-    #notif-card:not(.collapsed) #notif-panel{max-height:800px;}
-    #notif-arrow{transition:transform .28s ease;}
+    #notif-card:not(.collapsed) #notif-panel{max-height:600px;}
+    #notif-arrow{transition:transform .2s ease;}
     #notif-card.collapsed #notif-arrow{transform:rotate(0deg);}
     #notif-card:not(.collapsed) #notif-arrow{transform:rotate(180deg);}
+    /* Collapsible Docker hosts panel */
+    #hosts-card #hosts-panel{transition:max-height .2s ease-out;overflow:hidden;}
+    #hosts-card.collapsed #hosts-panel{max-height:0!important;}
+    #hosts-card:not(.collapsed) #hosts-panel{max-height:800px;}
+    #hosts-arrow{transition:transform .2s ease;}
+    #hosts-card.collapsed #hosts-arrow{transform:rotate(0deg);}
+    #hosts-card:not(.collapsed) #hosts-arrow{transform:rotate(180deg);}
   </style>
 </head>
 <body>
@@ -297,59 +308,59 @@
     </div>
 
     <!-- All-Time Statistics Card -->
-    <h2 style="margin-top:1.6rem;font-size:0.95rem;">All-Time Statistics</h2>
-    <div class="card" id="stats-card" style="border-color:var(--accent-soft);box-shadow: 0 20px 60px rgba(8,15,28,0.6), 0 0 40px rgba(34,197,94,0.06);padding:18px;">
-      <div id="stats-loading" style="text-align:center;color:var(--muted);padding:8px;font-size:0.9rem;">
+    <h2 style="margin-top:0.8rem;font-size:0.95rem;">All-Time Statistics</h2>
+    <div class="card" id="stats-card" style="padding:12px;">
+      <div id="stats-loading" style="text-align:center;color:var(--muted);padding:6px;font-size:0.85rem;">
         Loading statistics...
       </div>
       <div id="stats-content" style="display:none;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
           <!-- Total Space Reclaimed -->
-          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(34,197,94,0.06),rgba(14,165,233,0.04));border-radius:10px;border:1px solid rgba(34,197,94,0.1);">
-            <div style="font-size:1.5rem;font-weight:700;color:var(--accent-strong);font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-space">0 B</div>
-            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Total Reclaimed</div>
+          <div style="text-align:center;padding:6px;background:linear-gradient(135deg,rgba(34,197,94,0.06),rgba(14,165,233,0.04));border-radius:8px;border:1px solid rgba(34,197,94,0.1);">
+            <div style="font-size:1.3rem;font-weight:700;color:var(--accent-strong);font-family:'Montserrat',sans-serif;margin-bottom:1px;" id="stats-space">0 B</div>
+            <div style="font-size:0.73rem;color:var(--muted);font-weight:600;">Total Reclaimed</div>
           </div>
           
           <!-- Prune Runs -->
-          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(99,102,241,0.04));border-radius:10px;border:1px solid rgba(14,165,233,0.1);">
-            <div style="font-size:1.5rem;font-weight:700;color:var(--accent);font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-runs">0</div>
-            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Prune Runs</div>
+          <div style="text-align:center;padding:6px;background:linear-gradient(135deg,rgba(14,165,233,0.06),rgba(99,102,241,0.04));border-radius:8px;border:1px solid rgba(14,165,233,0.1);">
+            <div style="font-size:1.3rem;font-weight:700;color:var(--accent);font-family:'Montserrat',sans-serif;margin-bottom:1px;" id="stats-runs">0</div>
+            <div style="font-size:0.73rem;color:var(--muted);font-weight:600;">Prune Runs</div>
           </div>
           
           <!-- Containers Deleted -->
-          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(236,72,153,0.04));border-radius:10px;border:1px solid rgba(168,85,247,0.1);">
-            <div style="font-size:1.5rem;font-weight:700;color:#c084fc;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-containers">0</div>
-            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Containers</div>
+          <div style="text-align:center;padding:6px;background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(236,72,153,0.04));border-radius:8px;border:1px solid rgba(168,85,247,0.1);">
+            <div style="font-size:1.3rem;font-weight:700;color:#c084fc;font-family:'Montserrat',sans-serif;margin-bottom:1px;" id="stats-containers">0</div>
+            <div style="font-size:0.73rem;color:var(--muted);font-weight:600;">Containers</div>
           </div>
           
           <!-- Images Deleted -->
-          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(14,165,233,0.04));border-radius:10px;border:1px solid rgba(59,130,246,0.1);">
-            <div style="font-size:1.5rem;font-weight:700;color:#60a5fa;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-images">0</div>
-            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Images</div>
+          <div style="text-align:center;padding:6px;background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(14,165,233,0.04));border-radius:8px;border:1px solid rgba(59,130,246,0.1);">
+            <div style="font-size:1.3rem;font-weight:700;color:#60a5fa;font-family:'Montserrat',sans-serif;margin-bottom:1px;" id="stats-images">0</div>
+            <div style="font-size:0.73rem;color:var(--muted);font-weight:600;">Images</div>
           </div>
           
           <!-- Networks Deleted -->
-          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(251,191,36,0.06),rgba(245,158,11,0.04));border-radius:10px;border:1px solid rgba(251,191,36,0.1);">
-            <div style="font-size:1.5rem;font-weight:700;color:#fbbf24;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-networks">0</div>
-            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Networks</div>
+          <div style="text-align:center;padding:6px;background:linear-gradient(135deg,rgba(251,191,36,0.06),rgba(245,158,11,0.04));border-radius:8px;border:1px solid rgba(251,191,36,0.1);">
+            <div style="font-size:1.3rem;font-weight:700;color:#fbbf24;font-family:'Montserrat',sans-serif;margin-bottom:1px;" id="stats-networks">0</div>
+            <div style="font-size:0.73rem;color:var(--muted);font-weight:600;">Networks</div>
           </div>
           
           <!-- Volumes Deleted -->
-          <div style="text-align:center;padding:8px;background:linear-gradient(135deg,rgba(239,68,68,0.06),rgba(220,38,38,0.04));border-radius:10px;border:1px solid rgba(239,68,68,0.1);">
-            <div style="font-size:1.5rem;font-weight:700;color:#f87171;font-family:'Montserrat',sans-serif;margin-bottom:2px;" id="stats-volumes">0</div>
-            <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Volumes</div>
+          <div style="text-align:center;padding:6px;background:linear-gradient(135deg,rgba(239,68,68,0.06),rgba(220,38,38,0.04));border-radius:8px;border:1px solid rgba(239,68,68,0.1);">
+            <div style="font-size:1.3rem;font-weight:700;color:#f87171;font-family:'Montserrat',sans-serif;margin-bottom:1px;" id="stats-volumes">0</div>
+            <div style="font-size:0.73rem;color:var(--muted);font-weight:600;">Volumes</div>
           </div>
         </div>
         
         <!-- First and Last Run Dates -->
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--card-border);display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;">
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--card-border);display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px;">
           <div style="text-align:center;">
-            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:3px;">First Run</div>
-            <div style="font-size:0.85rem;color:var(--text);font-weight:600;" id="stats-first">-</div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">First Run</div>
+            <div style="font-size:0.8rem;color:var(--text);font-weight:600;" id="stats-first">-</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:3px;">Last Run</div>
-            <div style="font-size:0.85rem;color:var(--text);font-weight:600;" id="stats-last">-</div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:2px;">Last Run</div>
+            <div style="font-size:0.8rem;color:var(--text);font-weight:600;" id="stats-last">-</div>
           </div>
         </div>
       </div>
@@ -501,6 +512,62 @@
         </div>
       </div>
 
+      <!-- Docker Hosts Management Section -->
+      <h2>Docker Hosts</h2>
+      <!-- Collapsible Docker hosts card -->
+      <div class="card collapsed" id="hosts-card">
+        <!-- Collapsible header button -->
+        <button type="button" id="hosts-header" aria-expanded="false" aria-controls="hosts-panel"
+          style="all:unset;display:flex;width:100%;cursor:pointer;align-items:center;justify-content:space-between;padding:4px 0 8px 0;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <!-- Docker/Server icon (simple style matching notifications) -->
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+              <!-- Server/container stack -->
+              <rect x="2" y="3" width="20" height="5" rx="1" fill="none" stroke="#9ca3af" stroke-width="1.5"></rect>
+              <rect x="2" y="10" width="20" height="5" rx="1" fill="none" stroke="#9ca3af" stroke-width="1.5"></rect>
+              <rect x="2" y="17" width="20" height="4" rx="1" fill="none" stroke="#9ca3af" stroke-width="1.5"></rect>
+              <!-- Status dots -->
+              <circle cx="5" cy="5.5" r="0.8" fill="#9ca3af"></circle>
+              <circle cx="5" cy="12.5" r="0.8" fill="#9ca3af"></circle>
+              <circle cx="5" cy="19" r="0.8" fill="#9ca3af"></circle>
+            </svg>
+            <div>
+              <strong>External Docker hosts</strong>
+              <div class="hint">Connect to remote Docker hosts via TCP docker-socket-proxy</div>
+            </div>
+          </div>
+          <span id="hosts-arrow" style="font-size:1.05rem;transition:.2s;">▼</span>
+        </button>
+
+        <!-- Collapsible hosts panel -->
+        <div id="hosts-panel" style="overflow:hidden;">
+          <p style="color:var(--muted);font-size:0.9rem;margin:12px 0;">
+            Add external Docker hosts using <code style="background:rgba(14,165,233,0.08);padding:2px 6px;border-radius:4px;font-size:0.85rem;">tcp://host:2375</code>. <strong>This function requires a <a href="https://github.com/Tecnativa/docker-socket-proxy" target="_blank" style="color:#0ea5e9;text-decoration:none;">docker-socket-proxy</a> container running on each remote host.</strong> See the <a href="https://github.com/anoniemerd/PruneMate" target="_blank" style="color:#0ea5e9;text-decoration:none;">GitHub repo</a> for an example docker-compose.yaml for the docker-socket-proxy.
+          </p>
+          
+          <!-- Hosts List -->
+          <div id="hosts-list" style="margin-bottom:16px;">
+            <!-- Populated by JavaScript -->
+          </div>
+          
+          <!-- Add New Host Form -->
+          <div style="border-top:1px solid var(--card-border);padding-top:12px;margin-top:12px;">
+            <h3 style="font-size:0.9rem;margin-bottom:10px;color:var(--text);">Add New Host</h3>
+            <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:end;">
+              <div class="field">
+                <label for="new-host-name">Name</label>
+                <input type="text" id="new-host-name" name="new-host-name" placeholder="Server 1" style="width:100%;" />
+              </div>
+              <div class="field">
+                <label for="new-host-url">URL</label>
+                <input type="text" id="new-host-url" name="new-host-url" placeholder="tcp://192.168.1.10:2375" style="width:100%;" />
+              </div>
+              <button type="button" onclick="addNewHost()" class="btn btn-secondary" style="margin:0;">Add Host</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Notifications configuration section -->
       <h2>Notifications</h2>
       <!-- Collapsible notification settings card -->
@@ -615,7 +682,7 @@
       </div>
 
       <!-- Save and schedule button -->
-      <div style="margin-top: 16px;">
+      <div style="margin-top: 10px;">
         <button type="submit" class="btn btn-primary">
           Save &amp; Schedule
         </button>
@@ -623,7 +690,7 @@
     </form>
 
     <!-- Manual prune trigger form -->
-    <form method="post" action="{{ url_for('run_now') }}" style="margin-top: 10px;" onsubmit="setTimeout(loadStats, 1000);">
+    <form method="post" action="{{ url_for('run_now') }}" style="margin-top: 6px;" onsubmit="setTimeout(loadStats, 1000);">
       <button type="submit" class="btn btn-secondary">
         Run now
       </button>
@@ -631,7 +698,7 @@
 
     <!-- Application footer -->
     <div class="footer">
-      PruneMate · 2025 · V1.2.5 ·
+      PruneMate · 2025 · V1.2.6 ·
       <a href="https://github.com/anoniemerd/PruneMate" target="_blank">GitHub</a>
     </div>
   </div>
@@ -831,7 +898,8 @@
       function setNotif(open){
         if(open){
           notifCard.classList.remove('collapsed');
-          notifPanel.style.maxHeight = notifPanel.scrollHeight + 'px';
+          // Use scrollHeight for smooth transition
+          notifPanel.style.maxHeight = notifPanel.scrollHeight + 20 + 'px';
           notifHeader.setAttribute('aria-expanded','true');
         } else {
           notifCard.classList.add('collapsed');
@@ -926,6 +994,237 @@
         });
     }
 
+    // Load and display Docker hosts
+    function loadHosts(){
+      const hostsList = document.getElementById('hosts-list');
+      if (!hostsList) return;
+      
+      fetch('/hosts')
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to fetch hosts');
+          return response.json();
+        })
+        .then(data => {
+          const hosts = data.hosts || [];
+          
+          // Filter out Local host - it's always connected automatically
+          const externalHosts = hosts.filter(host => host.name !== 'Local' && !host.url.includes('unix://'));
+
+          hostsList.innerHTML = '';
+          
+          externalHosts.forEach((host, displayIndex) => {
+            // Find original index in full hosts array for API calls
+            const originalIndex = hosts.findIndex(h => h.name === host.name && h.url === host.url);
+            
+            const hostDiv = document.createElement('div');
+            hostDiv.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;background:rgba(14,165,233,0.04);border:1px solid var(--card-border);border-radius:10px;margin-bottom:8px;';
+            
+            // Host status indicator
+            const statusDot = document.createElement('div');
+            statusDot.style.cssText = `width:10px;height:10px;border-radius:50%;flex-shrink:0;background:${host.enabled ? '#22c55e' : '#6b7280'};`;
+            statusDot.title = host.enabled ? 'Enabled' : 'Disabled';
+            
+            // Host info
+            const infoDiv = document.createElement('div');
+            infoDiv.style.cssText = 'flex:1;min-width:0;';
+            
+            const nameSpan = document.createElement('div');
+            nameSpan.style.cssText = 'font-weight:600;color:var(--text);font-size:0.95rem;margin-bottom:2px;';
+            nameSpan.textContent = host.name;
+            
+            const urlSpan = document.createElement('div');
+            urlSpan.style.cssText = 'font-size:0.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            urlSpan.textContent = host.url;
+            
+            infoDiv.appendChild(nameSpan);
+            infoDiv.appendChild(urlSpan);
+            
+            // Action buttons container
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+            
+            // Toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.innerHTML = host.enabled ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+            toggleBtn.title = host.enabled ? 'Disable' : 'Enable';
+            toggleBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:8px;border:1px solid var(--card-border);background:rgba(14,165,233,0.06);color:var(--text);border-radius:6px;cursor:pointer;font-size:0.9rem;transition:all 0.2s;';
+            toggleBtn.onmouseover = () => toggleBtn.style.background = 'rgba(14,165,233,0.12)';
+            toggleBtn.onmouseout = () => toggleBtn.style.background = 'rgba(14,165,233,0.06)';
+            toggleBtn.onclick = () => toggleHost(originalIndex);
+            
+            // Edit button
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+            editBtn.title = 'Edit';
+            editBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:8px;border:1px solid var(--card-border);background:rgba(251,191,36,0.06);color:var(--text);border-radius:6px;cursor:pointer;font-size:0.9rem;transition:all 0.2s;';
+            editBtn.onmouseover = () => editBtn.style.background = 'rgba(251,191,36,0.12)';
+            editBtn.onmouseout = () => editBtn.style.background = 'rgba(251,191,36,0.06)';
+            editBtn.onclick = () => editHost(originalIndex, host);
+            
+            // Delete button (always show for external hosts)
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+            deleteBtn.title = 'Delete';
+            deleteBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:8px;border:1px solid var(--card-border);background:rgba(239,68,68,0.06);color:var(--text);border-radius:6px;cursor:pointer;font-size:0.9rem;transition:all 0.2s;';
+            deleteBtn.onmouseover = () => deleteBtn.style.background = 'rgba(239,68,68,0.12)';
+            deleteBtn.onmouseout = () => deleteBtn.style.background = 'rgba(239,68,68,0.06)';
+            deleteBtn.onclick = () => deleteHost(originalIndex, host.name);
+            actionsDiv.appendChild(deleteBtn);
+            
+            actionsDiv.appendChild(toggleBtn);
+            actionsDiv.appendChild(editBtn);
+            
+            hostDiv.appendChild(statusDot);
+            hostDiv.appendChild(infoDiv);
+            hostDiv.appendChild(actionsDiv);
+            
+            hostsList.appendChild(hostDiv);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading hosts:', err);
+          hostsList.innerHTML = '<div style="color:#f87171;font-size:0.9rem;padding:8px;">Failed to load hosts</div>';
+        });
+    }
+
+    // Toggle host enabled/disabled status
+    function toggleHost(index){
+      fetch(`/hosts/${index}/toggle`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            loadHosts();
+            // Auto-save config after toggle
+            const mainForm = document.querySelector('form[action="{{ url_for("update") }}"]');
+            if (mainForm) {
+              // Create hidden input to track that this is an auto-save
+              const autoSaveInput = document.createElement('input');
+              autoSaveInput.type = 'hidden';
+              autoSaveInput.name = 'auto_save';
+              autoSaveInput.value = '1';
+              mainForm.appendChild(autoSaveInput);
+              mainForm.submit();
+            }
+          } else {
+            alert('Failed to toggle host: ' + (data.error || 'Unknown error'));
+          }
+        })
+        .catch(err => {
+          console.error('Error toggling host:', err);
+          alert('Failed to toggle host');
+        });
+    }
+
+    // Edit host (prompt for new values) - Config auto-saves after update
+    function editHost(index, host){
+      const newName = prompt('Host name:', host.name);
+      if (!newName || newName === host.name) {
+        // Check if URL should be updated
+        const newUrl = prompt('Host URL:', host.url);
+        if (!newUrl) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/hosts/${index}/update`;
+        form.innerHTML = `
+          <input type="hidden" name="name" value="${host.name}">
+          <input type="hidden" name="url" value="${newUrl}">
+          <input type="hidden" name="enabled" value="${host.enabled ? 'on' : ''}">
+          <input type="hidden" name="auto_save" value="1">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+      
+      const newUrl = prompt('Host URL:', host.url);
+      if (!newUrl) return;
+      
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/hosts/${index}/update`;
+      form.innerHTML = `
+        <input type="hidden" name="name" value="${newName}">
+        <input type="hidden" name="url" value="${newUrl}">
+        <input type="hidden" name="enabled" value="${host.enabled ? 'on' : ''}">
+        <input type="hidden" name="auto_save" value="1">
+      `;
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    // Delete host with confirmation - Config auto-saves after deletion
+    function deleteHost(index, hostName){
+      if (!confirm(`Are you sure you want to delete host "${hostName}"?`)) return;
+      
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/hosts/${index}/delete`;
+      form.innerHTML = '<input type="hidden" name="auto_save" value="1">';
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    // Add new host from the form - Config auto-saves after adding
+    function addNewHost(){
+      const nameInput = document.getElementById('new-host-name');
+      const urlInput = document.getElementById('new-host-url');
+      
+      const name = nameInput.value.trim();
+      const url = urlInput.value.trim();
+      
+      if (!name || !url) {
+        alert('Please enter both host name and URL');
+        return;
+      }
+      
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/hosts/add';
+      form.innerHTML = `
+        <input type="hidden" name="name" value="${name}">
+        <input type="hidden" name="url" value="${url}">
+        <input type="hidden" name="enabled" value="on">
+        <input type="hidden" name="auto_save" value="1">
+      `;
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    // Manage collapsible Docker hosts panel
+    function initHostsCollapse(){
+      const hostsCard = document.getElementById('hosts-card');
+      const hostsHeader = document.getElementById('hosts-header');
+      const hostsPanel = document.getElementById('hosts-panel');
+      const hostsArrow = document.getElementById('hosts-arrow');
+      if(!hostsCard || !hostsHeader || !hostsPanel) return;
+      
+      // Toggle hosts panel open/closed
+      function setHosts(open){
+        if(open){
+          hostsCard.classList.remove('collapsed');
+          // Use scrollHeight for smooth transition
+          hostsPanel.style.maxHeight = hostsPanel.scrollHeight + 20 + 'px';
+          hostsHeader.setAttribute('aria-expanded','true');
+        } else {
+          hostsCard.classList.add('collapsed');
+          hostsPanel.style.maxHeight = '0px';
+          hostsHeader.setAttribute('aria-expanded','false');
+        }
+      }
+      
+      // Start with panel collapsed
+      setHosts(false);
+      hostsHeader.addEventListener('click', () => {
+        // Toggle panel state on click
+        const isOpen = hostsHeader.getAttribute('aria-expanded') === 'true';
+        setHosts(!isOpen);
+      });
+    }
+
     // Initialize all components after DOM ready
     document.addEventListener('DOMContentLoaded', function(){
       // Set initial schedule display based on frequency
@@ -945,8 +1244,14 @@
       // Setup collapsible notification panel
       initNotificationCollapse();
       
+      // Setup collapsible Docker hosts panel
+      initHostsCollapse();
+      
       // Load all-time statistics
       loadStats();
+      
+      // Load Docker hosts
+      loadHosts();
       
       {% if not use_24h %}
       // Setup 12-hour time picker with AM/PM
@@ -959,8 +1264,9 @@
         // Convert 24h time to 12h format for display
         function init12hTime(){
           const time24 = timeHidden.value;
-          const [h24Str, min] = time24.split(':');
-          const h24 = parseInt(h24Str);
+          const [h24Str, minStr] = time24.split(':');
+          const h24 = parseInt(h24Str, 10);
+          const min = parseInt(minStr, 10);
           let h12, period;
           
           // Convert 24-hour to 12-hour format with AM/PM
@@ -980,7 +1286,7 @@
           
           // Update display fields with converted values
           timeHour.value = h12;
-          timeMinute.value = String(parseInt(min)).padStart(2, '0');
+          timeMinute.value = String(min).padStart(2, '0');
           timePeriod.value = period;
         }
         
