@@ -332,19 +332,6 @@ services:
 **3. Test connection:**
 Click **Run now** and check logs for successful connection to all hosts.
 
-### Notifications with Multiple Hosts
-
-Notifications show per-host breakdown:
-```
-• Local
-  - 💿 2 containers, 5 images
-  - 💾 450.2 MB reclaimed
-• NAS
-  - 💿 12 images, 1 network
-  - 💾 1.2 GB reclaimed
-
-Total: 1.8 GB reclaimed
-```
 
 ### Troubleshooting
 
