@@ -96,7 +96,8 @@ Gotify :
 
 ntfy :
 <p align="center">
-  <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/232acb54-b06f-46b7-b829-df7a10dd4a6a" />
+  <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/fd214db5-34ef-4e3b-8c73-b78262964739" />
+
 </p>
 
 
