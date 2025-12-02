@@ -8,7 +8,7 @@
 <p align="center"><em>Docker image & resource cleanup helper, on a schedule!</em></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.6-purple?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/version-1.2.7-purple?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/python-3.12-yellow?style=for-the-badge&logo=python&logoColor=ffffff"/>
   <img src="https://img.shields.io/badge/docker-compose-0db7ed?style=for-the-badge&logo=docker&logoColor=ffffff"/>
   <img src="https://img.shields.io/badge/license-AGPLv3-orange?style=for-the-badge"/>
@@ -33,7 +33,7 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 - 🐳 **Multi-host support** - Manage multiple Docker hosts from one interface (requires docker-socket-proxy on remote hosts)
 - 🧹 **Selective cleanup** - Choose what to prune: containers, images, networks, volumes
 - 📊 **All-Time Statistics** - Track cumulative space reclaimed and resources deleted across all runs
-- 🔔 **Smart notifications** - Gotify or ntfy.sh support with optional change-only alerts
+- 🔔 **Smart notifications** - Gotify or ntfy.sh support with Bearer token & Basic Auth, optional change-only alerts
 - 🎨 **Modern UI** - Dark theme with smooth animations and responsive design
 - 🔒 **Safe & controlled** - Manual trigger option and detailed logging
 - 📈 **Detailed reports** - See exactly what was cleaned and how much space was reclaimed
@@ -304,7 +304,7 @@ flowchart TD
     CheckNotif --> |Yes| CheckChanges{Only notify<br/>on changes?}
     
     CheckChanges --> |Yes & No changes| LogResults
-    CheckChanges --> |No or Has changes| SendNotif[Send notification<br/>Gotify or ntfy.sh]
+    CheckChanges --> |No or Has changes| SendNotif[Send notification<br/>Gotify or ntfy]
     
     SendNotif --> LogResults
     LogResults --> RemoveLock[Remove prunemate.lock]
@@ -382,8 +382,14 @@ PruneMate tracks cumulative statistics across all prune runs:
 1. Choose a unique topic name (e.g., `prunemate-alerts`)
 2. Configure in PruneMate:
    - **Provider:** ntfy
-   - **URL:** `https://ntfy.sh` (or your self-hosted instance)
+   - **URL:** `https://ntfy.sh` (or your self-hosted instance, supports `username:password@host` format)
    - **Topic:** Your chosen topic name
+   - **Token:** (Optional) Bearer token for authentication
+
+**Authentication options:**
+- **Bearer token:** Recommended for API access tokens (higher priority)
+- **URL credentials:** Use `https://username:password@ntfy.example.com` format (RFC 3986 compliant)
+- **No authentication:** Works with public topics
 
 **Subscribe to notifications:**
 - **Web:** Visit `https://ntfy.sh/your-topic`
@@ -467,15 +473,26 @@ Click **Run now** and check logs for successful connection to all hosts.
 
 ## 📜 Release Notes
 
+### Version 1.2.7 (December 2025)
+- 🔐 **NEW** ntfy authentication support - Bearer token and Basic Auth (username:password in URL)
+  - Priority system: Bearer token → Basic Auth → unauthenticated
+  - RFC 3986 compliant URL parsing for embedded credentials
+- 🔒 **NEW** Enhanced credential security - Passwords and tokens masked in all log output
+- 🎨 **Improved:** Logo enhancement by [@shollyethan](https://github.com/shollyethan)
+- 📏 **Improved:** Logo size increased from 76×76px to 82×82px
+- 📱 **Improved:** Better mobile support - Enhanced responsive design for smartphone usage
+- 🔔 **Improved:** Notification panel height increased to 900px with enhanced scrolling
+- 🔧 **Improved:** Config migration with deep merge strategy prevents data loss during upgrades
+- 📊 **Improved:** Stats persistence with forward-compatible field migration and type safety
+- 🐛 **Fixed:** Config shallow merge bug causing nested key loss during v1.2.6 → v1.2.7 upgrades
+- 🐛 **Fixed:** Legacy notification migration incomplete (ntfy credentials not preserved)
+- 🐛 **Fixed:** Stats type safety issues with corrupt JSON files
+- 🐛 **Fixed:** Notification panel button visibility on smaller screens
+
 ### Version 1.2.6 (November 2025)
 - 🐳 **NEW** Multi-host support - Manage multiple Docker hosts from one interface
-  - Per-host results in notifications with detailed breakdown for each Docker host
-  - Docker hosts management UI (add, edit, enable/disable, delete external hosts)
-- 🔔 **Improved:** Notification formatting with enhanced layout, consistent emoji usage, and bullet points
-- 📬 **Improved:** Notifications now show per-host breakdown for multi-host setups with aggregate totals
-- 🎯 **Improved:** Better visual hierarchy in notifications with clear sections and spacing
+- 🔔 **Improved:** Notification formatting with enhanced layout and per-host breakdown
 - 🐛 **Fixed:** Critical checkbox handling bug affecting all prune and notification toggles
-- 🔧 **Improved:** Code quality improvements and better error handling
 
 📖 **[View full changelog](CHANGELOG.md)**
 

@@ -4,7 +4,9 @@ import logging
 import tempfile
 import datetime
 import calendar
+import base64
 import urllib.request
+import urllib.parse
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -48,7 +50,7 @@ DEFAULT_CONFIG = {
     "notifications": {
         "provider": "gotify",
         "gotify": {"enabled": False, "url": "", "token": ""},
-        "ntfy": {"enabled": False, "url": "", "topic": ""},
+        "ntfy": {"enabled": False, "url": "", "topic": "", "token": ""},
         "only_on_changes": True,
     },
 }
@@ -125,6 +127,21 @@ def _redact_for_log(obj):
         for k, v in obj.items():
             if k.lower() in {"token", "api_key", "apikey", "password", "secret"}:
                 redacted[k] = "***"
+            elif k.lower() == "url" and isinstance(v, str):
+                # Redact username:password in URLs
+                parsed = urllib.parse.urlparse(v)
+                if parsed.username or parsed.password:
+                    clean_url = urllib.parse.urlunparse((
+                        parsed.scheme,
+                        f"***:***@{parsed.hostname}" + (f":{parsed.port}" if parsed.port else ""),
+                        parsed.path,
+                        parsed.params,
+                        parsed.query,
+                        parsed.fragment
+                    ))
+                    redacted[k] = clean_url
+                else:
+                    redacted[k] = v
             else:
                 redacted[k] = _redact_for_log(v)
         return redacted
@@ -178,18 +195,9 @@ def _clear_last_run_key() -> None:
 
 # ---- All-time statistics tracking ----
 def load_stats() -> dict:
-    """Load cumulative statistics from disk."""
-    try:
-        if STATS_FILE.exists():
-            with open(STATS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-    except json.JSONDecodeError as e:
-        log(f"Stats file corrupt (invalid JSON): {e}. Using defaults and will overwrite on next save.")
-    except Exception as e:
-        log(f"Error loading stats from {STATS_FILE}: {e}")
-    
-    # Return default stats structure
-    return {
+    """Load cumulative statistics from disk with migration support."""
+    # Default stats structure (source of truth for all fields)
+    default_stats = {
         "total_space_reclaimed": 0,
         "containers_deleted": 0,
         "images_deleted": 0,
@@ -199,6 +207,35 @@ def load_stats() -> dict:
         "first_run": None,
         "last_run": None,
     }
+    
+    try:
+        if STATS_FILE.exists():
+            with open(STATS_FILE, "r", encoding="utf-8") as f:
+                loaded_stats = json.load(f)
+            
+            # Merge with defaults to handle missing fields (forward compatibility)
+            # This ensures new fields added in future versions get default values
+            merged_stats = json.loads(json.dumps(default_stats))
+            for key in default_stats:
+                if key in loaded_stats:
+                    # Type safety: ensure numeric fields are actually numbers
+                    if key in {"total_space_reclaimed", "containers_deleted", "images_deleted", 
+                              "networks_deleted", "volumes_deleted", "prune_runs"}:
+                        try:
+                            merged_stats[key] = int(loaded_stats[key])
+                        except (ValueError, TypeError):
+                            log(f"Stats field '{key}' has invalid type, using default: 0")
+                            merged_stats[key] = 0
+                    else:
+                        merged_stats[key] = loaded_stats[key]
+            
+            return merged_stats
+    except json.JSONDecodeError as e:
+        log(f"Stats file corrupt (invalid JSON): {e}. Using defaults and will overwrite on next save.")
+    except Exception as e:
+        log(f"Error loading stats from {STATS_FILE}: {e}")
+    
+    return json.loads(json.dumps(default_stats))
 
 
 def save_stats(stats: dict) -> None:
@@ -234,18 +271,23 @@ def save_stats(stats: dict) -> None:
 
 
 def update_stats(containers: int, images: int, networks: int, volumes: int, space: int) -> None:
-    """Update cumulative statistics after a prune run."""
+    """Update cumulative statistics after a prune run with type safety."""
     stats = load_stats()
     
-    stats["containers_deleted"] += containers
-    stats["images_deleted"] += images
-    stats["networks_deleted"] += networks
-    stats["volumes_deleted"] += volumes
-    stats["total_space_reclaimed"] += space
-    stats["prune_runs"] += 1
+    # Type-safe increments (load_stats already validates types, but be defensive)
+    try:
+        stats["containers_deleted"] = int(stats.get("containers_deleted", 0)) + int(containers)
+        stats["images_deleted"] = int(stats.get("images_deleted", 0)) + int(images)
+        stats["networks_deleted"] = int(stats.get("networks_deleted", 0)) + int(networks)
+        stats["volumes_deleted"] = int(stats.get("volumes_deleted", 0)) + int(volumes)
+        stats["total_space_reclaimed"] = int(stats.get("total_space_reclaimed", 0)) + int(space)
+        stats["prune_runs"] = int(stats.get("prune_runs", 0)) + 1
+    except (ValueError, TypeError) as e:
+        log(f"Type error in stats update: {e}. Stats may be incomplete.")
+        # Continue with partial update rather than failing completely
     
     now = datetime.datetime.now(app_timezone).isoformat()
-    if stats["first_run"] is None:
+    if stats.get("first_run") is None:
         stats["first_run"] = now
     stats["last_run"] = now
     
@@ -318,6 +360,26 @@ def validate_time(s: str) -> str:
     return f"{h:02d}:{m:02d}"
 
 
+def _deep_merge(base: dict, override: dict) -> None:
+    """Deep merge override dict into base dict, preserving nested structures.
+    
+    This ensures that nested dicts like notifications.gotify and notifications.ntfy
+    are merged individually rather than being completely replaced.
+    
+    Example:
+        base = {"notifications": {"gotify": {...}, "ntfy": {...}}}
+        override = {"notifications": {"provider": "ntfy"}}
+        Result: base keeps gotify and ntfy sub-dicts, only updates provider field
+    """
+    for key, value in override.items():
+        if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+            # Recursively merge nested dicts
+            _deep_merge(base[key], value)
+        else:
+            # Overwrite primitives and lists
+            base[key] = value
+
+
 def effective_config():
     """Return the current effective configuration with relevant fields."""
     freq = config.get("frequency", "daily")
@@ -339,31 +401,58 @@ def effective_config():
 
 
 def load_config(silent=False):
-    """Load configuration from disk. Set silent=True to suppress logging."""
+    """Load configuration from disk with deep merge. Set silent=True to suppress logging."""
     global config
     with config_lock:
         try:
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
             merged = json.loads(json.dumps(DEFAULT_CONFIG))
-            merged.update(data)
+            # Deep merge: preserve nested structures like notifications.gotify, notifications.ntfy
+            _deep_merge(merged, data)
 
-            # Migrate legacy gotify keys into new notifications structure (best-effort)
+            # Migrate legacy notification keys into new notifications structure (best-effort)
             # Only migrate if new structure doesn't exist in loaded config
-            if "notifications" not in data and any(k in data for k in ("gotify_enabled", "gotify_url", "gotify_token", "gotify_only_on_changes")):
-                got = {
-                    "enabled": bool(data.get("gotify_enabled")),
-                    "url": (data.get("gotify_url") or "").strip(),
-                    "token": (data.get("gotify_token") or "").strip(),
-                }
-                # Ensure notifications exists with defaults before accessing nested keys
-                if "notifications" not in merged:
-                    merged["notifications"] = json.loads(json.dumps(DEFAULT_CONFIG["notifications"]))
-                merged["notifications"].update({
-                    "provider": "gotify",
-                    "gotify": got,
-                    "only_on_changes": bool(data.get("gotify_only_on_changes", merged["notifications"].get("only_on_changes", True))),
-                })
+            if "notifications" not in data:
+                # Check if we have any legacy notification keys to migrate
+                has_gotify_keys = any(k in data for k in ("gotify_enabled", "gotify_url", "gotify_token"))
+                has_ntfy_keys = any(k in data for k in ("ntfy_enabled", "ntfy_url", "ntfy_topic", "ntfy_token"))
+                
+                if has_gotify_keys or has_ntfy_keys:
+                    # Ensure notifications exists with defaults before migration
+                    if "notifications" not in merged:
+                        merged["notifications"] = json.loads(json.dumps(DEFAULT_CONFIG["notifications"]))
+                    
+                    # Migrate Gotify settings if present
+                    if has_gotify_keys:
+                        got = {
+                            "enabled": bool(data.get("gotify_enabled")),
+                            "url": (data.get("gotify_url") or "").strip(),
+                            "token": (data.get("gotify_token") or "").strip(),
+                        }
+                        merged["notifications"]["gotify"] = got
+                    
+                    # Migrate ntfy settings if present
+                    if has_ntfy_keys:
+                        ntf = {
+                            "enabled": bool(data.get("ntfy_enabled")),
+                            "url": (data.get("ntfy_url") or "").strip(),
+                            "topic": (data.get("ntfy_topic") or "").strip(),
+                            "token": (data.get("ntfy_token") or "").strip(),
+                        }
+                        merged["notifications"]["ntfy"] = ntf
+                    
+                    # Migrate provider selection (default to gotify for backwards compatibility)
+                    if has_ntfy_keys and data.get("ntfy_enabled"):
+                        merged["notifications"]["provider"] = "ntfy"
+                    elif has_gotify_keys:
+                        merged["notifications"]["provider"] = "gotify"
+                    
+                    # Migrate only_on_changes setting (check both legacy keys)
+                    legacy_only_on_changes = data.get("gotify_only_on_changes") or data.get("ntfy_only_on_changes")
+                    if legacy_only_on_changes is not None:
+                        merged["notifications"]["only_on_changes"] = bool(legacy_only_on_changes)
+            
             # Ensure notifications key exists with all required subkeys
             if "notifications" not in merged:
                 merged["notifications"] = json.loads(json.dumps(DEFAULT_CONFIG["notifications"]))
@@ -469,11 +558,42 @@ def _send_ntfy(cfg: dict, title: str, message: str, priority: int = 5) -> bool:
         return False
     url = (cfg.get("url") or "").strip()
     topic = (cfg.get("topic") or "").strip()
+    token = (cfg.get("token") or "").strip()
+    
     if not url or not topic:
         log("ntfy enabled but URL/topic missing; skipping.")
         return False
-    endpoint = url.rstrip("/") + "/" + topic.lstrip("/")
+    
+    # Parse URL to extract authentication
+    parsed = urllib.parse.urlparse(url)
     headers = {"Title": title, "Priority": str(priority), "Content-Type": "text/plain"}
+    
+    # Priority 1: Use explicit token if provided (Bearer token auth)
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+        endpoint = url.rstrip("/") + "/" + topic.lstrip("/")
+    # Priority 2: Check if URL contains username:password (Basic auth)
+    elif parsed.username or parsed.password:
+        # Reconstruct URL without credentials
+        clean_url = urllib.parse.urlunparse((
+            parsed.scheme,
+            parsed.hostname + (f":{parsed.port}" if parsed.port else ""),
+            parsed.path,
+            parsed.params,
+            parsed.query,
+            parsed.fragment
+        ))
+        # Add Basic Auth header
+        username = parsed.username or ""
+        password = parsed.password or ""
+        credentials = f"{username}:{password}"
+        encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode("ascii")
+        headers["Authorization"] = f"Basic {encoded_credentials}"
+        endpoint = clean_url.rstrip("/") + "/" + topic.lstrip("/")
+    else:
+        # No authentication
+        endpoint = url.rstrip("/") + "/" + topic.lstrip("/")
+    
     payload = message.encode("utf-8")
     req = urllib.request.Request(endpoint, data=payload, headers=headers, method="POST")
     try:
@@ -943,6 +1063,7 @@ def update():
     ntfy_enabled = "ntfy_enabled" in request.form
     ntfy_url = (request.form.get("ntfy_url") or "").strip()
     ntfy_topic = (request.form.get("ntfy_topic") or "").strip()
+    ntfy_token = (request.form.get("ntfy_token") or "").strip()
     only_on_changes = "notifications_only_on_changes" in request.form
 
     # Auto-enable selected provider if fields are filled but toggle was forgotten
@@ -965,7 +1086,7 @@ def update():
         "notifications": {
             "provider": provider,
             "gotify": {"enabled": gotify_enabled, "url": gotify_url, "token": gotify_token},
-            "ntfy": {"enabled": ntfy_enabled, "url": ntfy_url, "topic": ntfy_topic},
+            "ntfy": {"enabled": ntfy_enabled, "url": ntfy_url, "topic": ntfy_topic, "token": ntfy_token},
             "only_on_changes": only_on_changes,
         },
     }
@@ -1049,6 +1170,7 @@ def test_notification():
     ntfy_enabled = "ntfy_enabled" in request.form
     ntfy_url = (request.form.get("ntfy_url") or "").strip()
     ntfy_topic = (request.form.get("ntfy_topic") or "").strip()
+    ntfy_token = (request.form.get("ntfy_token") or "").strip()
     only_on_changes = "notifications_only_on_changes" in request.form
 
     # Auto-enable selected provider if fields are filled but toggle was forgotten
@@ -1071,7 +1193,7 @@ def test_notification():
         "notifications": {
             "provider": provider,
             "gotify": {"enabled": gotify_enabled, "url": gotify_url, "token": gotify_token},
-            "ntfy": {"enabled": ntfy_enabled, "url": ntfy_url, "topic": ntfy_topic},
+            "ntfy": {"enabled": ntfy_enabled, "url": ntfy_url, "topic": ntfy_topic, "token": ntfy_token},
             "only_on_changes": only_on_changes,
         },
     }
@@ -1106,10 +1228,17 @@ def stats():
 
 @app.route("/hosts")
 def list_hosts():
-    """Return list of Docker hosts as JSON."""
+    """Return list of Docker hosts as JSON (includes Local socket for display)."""
     load_config(silent=True)
-    hosts = config.get("docker_hosts", [])
-    return jsonify({"hosts": hosts})
+    external_hosts = config.get("docker_hosts", [])
+    
+    # Include Local host at the beginning for consistency with run_prune_job()
+    # Frontend will filter it out for display, but it provides accurate count
+    all_hosts = [
+        {"name": "Local", "url": "unix:///var/run/docker.sock", "enabled": True}
+    ] + external_hosts
+    
+    return jsonify({"hosts": all_hosts})
 
 
 @app.route("/hosts/add", methods=["POST"])

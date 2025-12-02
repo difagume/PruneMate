@@ -7,8 +7,8 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
 
-  <link rel="icon" type="image/png"
-        href="{{ url_for('static', filename='prunemate-icon-embedded.svg') }}"/>
+  <link rel="icon" type="image/svg+xml"
+        href="{{ url_for('static', filename='prunemate-icon.svg') }}"/>
 
   <style>
     /* CSS custom properties (theme colors and design tokens) */
@@ -78,7 +78,7 @@
     /* Header layout and logo styling */
     .header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
     .title-block{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;transform:translateY(4px)}
-    .logo-wrap{width:76px;height:76px;border-radius:16px;flex-shrink:0}
+    .logo-wrap{width:82px;height:82px;border-radius:16px;flex-shrink:0}
     .logo-wrap img{width:100%;height:100%;object-fit:cover;display:block}
     .title-block h1{display:none}
     .wordmark{height:36px;max-width:360px}
@@ -257,7 +257,7 @@
     /* Collapsible notification panel */
     #notif-card #notif-panel{transition:max-height .2s ease-out;overflow:hidden;}
     #notif-card.collapsed #notif-panel{max-height:0!important;}
-    #notif-card:not(.collapsed) #notif-panel{max-height:600px;}
+    #notif-card:not(.collapsed) #notif-panel{max-height:900px;}
     #notif-arrow{transition:transform .2s ease;}
     #notif-card.collapsed #notif-arrow{transform:rotate(0deg);}
     #notif-card:not(.collapsed) #notif-arrow{transform:rotate(180deg);}
@@ -656,7 +656,7 @@
                 <label for="ntfy_url">ntfy URL :</label>
                 <input type="text" id="ntfy_url" name="ntfy_url"
                        value="{{ config.notifications.ntfy.url or '' }}"
-                       placeholder="https://ntfy.server" aria-label="ntfy server URL">
+                       placeholder="https://ntfy.sh" aria-label="ntfy server URL">
               </div>
             </div>
             <div class="row" style="margin-top:6px;">
@@ -665,6 +665,14 @@
                 <input type="text" id="ntfy_topic" name="ntfy_topic"
                        value="{{ config.notifications.ntfy.topic or '' }}"
                        placeholder="topic/name" aria-label="ntfy topic name">
+              </div>
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <div style="flex:1;">
+                <label for="ntfy_token">ntfy Token (optional) :</label>
+                <input type="password" id="ntfy_token" name="ntfy_token"
+                       value="{{ config.notifications.ntfy.token or '' }}"
+                       placeholder="Bearer token (optional)" aria-label="ntfy bearer token">
               </div>
             </div>
           </div>
@@ -698,7 +706,7 @@
 
     <!-- Application footer -->
     <div class="footer">
-      PruneMate · 2025 · V1.2.6 ·
+      PruneMate · 2025 · V1.2.7 ·
       <a href="https://github.com/anoniemerd/PruneMate" target="_blank">GitHub</a>
     </div>
   </div>
@@ -899,7 +907,7 @@
         if(open){
           notifCard.classList.remove('collapsed');
           // Use scrollHeight for smooth transition
-          notifPanel.style.maxHeight = notifPanel.scrollHeight + 20 + 'px';
+          notifPanel.style.maxHeight = notifPanel.scrollHeight + 40 + 'px';
           notifHeader.setAttribute('aria-expanded','true');
         } else {
           notifCard.classList.add('collapsed');

@@ -2,6 +2,40 @@
 
 All notable changes to PruneMate will be documented in this file.
 
+## [V1.2.7] - December 2025
+
+### Added
+- 🔐 **ntfy authentication support** - Bearer token and Basic Auth (username:password in URL)
+  - Priority system: Bearer token → Basic Auth → unauthenticated
+  - RFC 3986 compliant URL parsing for embedded credentials
+  - Optional token field in UI for ntfy provider
+- 🔒 **Enhanced credential security** - Passwords and tokens masked in all log output
+  - URL credentials (username:password) redacted in logs
+  - Bearer tokens sanitized in notification logs
+
+### Improved
+- 🎨 **Logo enhancement** - Improved SVG logo design (thanks to [@shollyethan](https://github.com/shollyethan))
+- 📏 Logo size increased from 76×76px to 82×82px for better visibility
+- 📱 **Better mobile support** - Enhanced responsive design for smartphone usage
+- 🔔 Notification panel height increased to 900px with enhanced scrolling behavior
+- 🔧 **Config migration improvements** - Deep merge strategy for nested structures
+  - Prevents data loss during v1.2.6 → v1.2.7 upgrades
+  - Preserves both gotify and ntfy settings in nested notifications structure
+- 📊 **Stats persistence improvements** - Forward-compatible field migration
+  - Type-safe increments with defensive programming
+  - Graceful handling of corrupt or incomplete stats files
+- 🏗️ **Hosts API consistency** - Local socket now included in `/hosts` endpoint response
+
+### Fixed
+- 🐛 Config shallow merge bug causing nested key loss during upgrades
+  - Replaced `dict.update()` with recursive `_deep_merge()` function
+- 🐛 Legacy notification migration incomplete (only migrated gotify, missed ntfy)
+- 🐛 Stats field migration missing for new fields in future versions
+- 🐛 Stats type safety issues with corrupt JSON files
+- 🐛 Notification panel button visibility on smaller screens
+
+---
+
 ## [V1.2.6] - November 2025
 
 ### Added
