@@ -14,7 +14,7 @@ All notable changes to PruneMate will be documented in this file.
   - Bearer tokens sanitized in notification logs
 
 ### Improved
-- 🎨 **Logo enhancement** - Improved SVG logo design (thanks to [@shollyethan](https://github.com/shollyethan))
+- 🎨 **Logo enhancement** - Improved SVG logo design (thanks to [@shollyethan](https://github.com/shollyethan)) + added to the Self-Hosted Dashboard Icons on https://selfh.st/icons/
 - 📏 Logo size increased from 76×76px to 82×82px for better visibility
 - 📱 **Better mobile support** - Enhanced responsive design for smartphone usage
 - 🔔 Notification panel height increased to 900px with enhanced scrolling behavior
