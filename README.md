@@ -48,7 +48,7 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 The overall look and feel of the PruneMate dashboard
 
 <p align="center">
-  <img width="400" height="800" src="https://github.com/user-attachments/assets/4e4eb62b-f812-4ec3-8fed-02aedca174db" />
+  <img width="400" height="800" src="https://github.com/user-attachments/assets/0eae9ddb-f507-404a-b187-a9ff8cc7488c" />
 
 </p>
 
@@ -56,7 +56,7 @@ The overall look and feel of the PruneMate dashboard
 Track cumulative prune statistics showing total space reclaimed, resources deleted, and run history.
 
 <p align="center">
-  <img width="400" height="400" alt="prunemate-statistics" src="https://github.com/user-attachments/assets/0eae9ddb-f507-404a-b187-a9ff8cc7488c" /> 
+  <img width="400" height="400" alt="prunemate-statistics" src="https://github.com/user-attachments/assets/a05eef40-8fb8-4387-93f8-7a25f3c8aef7" /> 
 </p>
 
 ### Schedule Configuration
