@@ -101,20 +101,21 @@ Get detailed statistics notifications about what was cleaned and how much space 
 Gotify :
 <p align="center">
   <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/757ce7d2-7e7e-409b-ae01-745262a067c7" />
-
 </p>
 
 ntfy :
 <p align="center">
   <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/fd214db5-34ef-4e3b-8c73-b78262964739" />
-
 </p>
 
 Discord :
 <p align="center">
-  <img width="400" height="400" alt="prunemate-discord" src="https://github.com/user-attachments/assets/fd214db5-34ef-4e3b-8c73-b78262964739" />
-
+  <img width="400" height="400" alt="prunemate-discord" src="https://github.com/user-attachments/assets/5d86533b-e63c-414a-a5ee-e4df6b337990" /> 
 </p>
+
+Telegram :
+<p align="center">
+  <img width="400" height="400" alt="prunemate-telegram" src="https://github.com/user-attachments/assets/f9fe4baf-3abb-4b36-b37b-b7bfc02d49a1" />
 </p>
 
 
