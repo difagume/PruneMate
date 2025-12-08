@@ -2,7 +2,6 @@
 
 All notable changes to PruneMate will be documented in this file.
 
-## [Unreleased]
 
 ### Added
 - 🏗️ **Docker build cache pruning support** - New option to clean up Docker builder cache
