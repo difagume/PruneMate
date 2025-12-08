@@ -49,8 +49,7 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 The overall look and feel of the PruneMate dashboard
 
 <p align="center">
-  <img width="400" height="800" src="https://github.com/user-attachments/assets/0eae9ddb-f507-404a-b187-a9ff8cc7488c" />
-
+  <img width="400" height="800" src="https://github.com/user-attachments/assets/2b7d8680-a629-4d75-b49a-ee8038bc9b12" /> 
 </p>
 
 ### Main Dashboard - All-Time Statistics
