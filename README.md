@@ -50,28 +50,14 @@ A sleek, lightweight web interface to **automatically clean up Docker resources*
 The overall look and feel of the PruneMate dashboard
 
 <p align="center">
-  <img width="400" height="800" src="https://github.com/user-attachments/assets/2b7d8680-a629-4d75-b49a-ee8038bc9b12" /> 
+  <img width="400" height="800" src="https://github.com/user-attachments/assets/14afc2f7-5791-408c-be8c-60f4f9ef18fa" /> 
 </p>
 
-### Main Dashboard - All-Time Statistics
-Track cumulative prune statistics showing total space reclaimed, resources deleted, and run history.
+### Authentication page
+The login page, (when enabled in the docker-compose.yaml environment variables)
 
 <p align="center">
-  <img width="400" height="400" alt="prunemate-statistics" src="https://github.com/user-attachments/assets/a50a3f14-8b14-4ec0-9101-6509247c2b53" /> 
-</p>
-
-### Schedule Configuration
-Configure when and how often PruneMate should clean up your Docker resources.
-
-<p align="center">
-  <img width="400" height="400" alt="prunemate-schedule" src="https://github.com/user-attachments/assets/3a822897-5ede-4476-b570-f4d8adf37867" /> 
-</p>
-
-### Cleanup Options
-Select which Docker resources to clean up and configure advanced options.
-
-<p align="center">
-  <img width="400" height="400" alt="prunemate-cleanup" src="https://github.com/user-attachments/assets/e582ecdb-216f-4465-8a55-5aea371eb825" />
+  <img width="400" height="800" src="https://github.com/user-attachments/assets/93612e04-21b4-4ca5-a0a0-1a876489c2fa" /> 
 </p>
 
 ### External Docker hosts
@@ -93,30 +79,6 @@ A brief interface that shows which Docker resources will be pruned during the ne
 
 <p align="center">
   <img width="400" height="400" alt="prunemate-preview" src="https://github.com/user-attachments/assets/34fb445d-8956-46e8-84df-b6718db3f556" /> 
-</p>
-
-
-### Cleanup Results
-Get detailed statistics notifications about what was cleaned and how much space was reclaimed.
-
-Gotify :
-<p align="center">
-  <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/757ce7d2-7e7e-409b-ae01-745262a067c7" />
-</p>
-
-ntfy :
-<p align="center">
-  <img width="400" height="400" alt="prunemate-results" src="https://github.com/user-attachments/assets/fd214db5-34ef-4e3b-8c73-b78262964739" />
-</p>
-
-Discord :
-<p align="center">
-  <img width="400" height="400" alt="prunemate-discord" src="https://github.com/user-attachments/assets/5d86533b-e63c-414a-a5ee-e4df6b337990" /> 
-</p>
-
-Telegram :
-<p align="center">
-  <img width="400" height="400" alt="prunemate-telegram" src="https://github.com/user-attachments/assets/f9fe4baf-3abb-4b36-b37b-b7bfc02d49a1" />
 </p>
 
 
